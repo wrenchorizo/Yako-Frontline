@@ -364,3 +364,59 @@ async function ejecutarDuelo(oponenteId) {
     notificar(`¡${data.victoria ? 'GANASTE' : 'PERDISTE'}! ${data.detalle}`, data.victoria ? 'info' : 'error');
     cargarDatos();
 }
+// --- SISTEMA DE NOTIFICACIONES EN TIEMPO REAL ---
+async function revisarSolicitudes() {
+    if (!usuario) return;
+    
+    const res = await fetch(`${API_URL}/solicitudes/pendientes/${usuario.id}`);
+    const solicitudes = await res.json();
+
+    solicitudes.forEach(sol => {
+        // Si encontramos una solicitud que no hemos mostrado
+        if (!document.getElementById(`sol-${sol._id}`)) {
+            mostrarPopUpSolicitud(sol);
+        }
+    });
+}
+
+function mostrarPopUpSolicitud(sol) {
+    const box = document.createElement('div');
+    box.id = `sol-${sol._id}`;
+    box.className = "fixed bottom-24 left-4 right-4 bg-indigo-950 border-2 border-indigo-500 p-5 rounded-[2rem] z-[9000] animate-bounce-in shadow-2xl";
+    
+    let texto = "";
+    let accionAceptar = "";
+
+    // CORRECCIÓN: Usar sol.tipo en lugar de tipo
+    if (sol.tipo === 'amistad') {
+        texto = `<i class="fas fa-user-plus mr-2 text-indigo-400"></i><b>${sol.emisorName}</b> quiere ser tu amigo`;
+        accionAceptar = `aceptarAmistad('${sol._id}')`;
+    } else if (sol.tipo === 'duelo') {
+        texto = `<i class="fas fa-swords mr-2 text-red-500"></i><b>${sol.emisorName}</b> te reta a un DUELO`;
+        accionAceptar = `aceptarDuelo('${sol._id}')`;
+    }
+
+    box.innerHTML = `
+        <p class="text-white hud-text-xs mb-4 uppercase font-black tracking-tight">${texto}</p>
+        <div class="flex gap-2">
+            <button onclick="${accionAceptar}" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-black text-[10px] text-white shadow-lg">ACEPTAR</button>
+            <button onclick="rechazarSol('${sol._id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-black text-[10px] text-gray-400">RECHAZAR</button>
+        </div>
+    `;
+    document.body.appendChild(box);
+}
+
+// Ejecutar cada 5 segundos
+setInterval(revisarSolicitudes, 5000);
+
+async function aceptarAmistad(solId) {
+    await fetch(`${API_URL}/solicitud/aceptar-amistad/${solId}`, { method: 'POST' });
+    document.getElementById(`sol-${solId}`).remove();
+    notificar("¡Ahora son amigos!");
+    cargarDatos(); // Para refrescar tu lista de amigos
+}
+
+async function rechazarSol(solId) {
+    // Aquí podrías hacer un fetch para borrarla, por ahora solo la quitamos de la vista
+    document.getElementById(`sol-${solId}`).remove();
+}
