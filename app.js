@@ -5,6 +5,7 @@ let equipo = [];
 let tabActual = 'harem';
 let invTimerInterval = null;
 let socialTabActual = 'chat';
+let chatTarget = "global";
 
 // --- NOTIFICACIONES ---
 function notificar(msj, tipo = 'info') {
@@ -262,7 +263,31 @@ function switchSocial(sub) {
     socialTabActual = sub;
     document.getElementById('social-chat').classList.toggle('hidden', sub !== 'chat');
     document.getElementById('social-usuarios').classList.toggle('hidden', sub !== 'usuarios');
-    if(sub === 'usuarios') cargarUsuarios();
+    document.getElementById('btn-tab-chat').classList.toggle('bg-indigo-600/20', sub === 'chat');
+    document.getElementById('btn-tab-users').classList.toggle('bg-indigo-600/20', sub === 'usuarios');
+}
+
+async function buscarUsuarios() {
+    const q = document.getElementById('user-search-input').value;
+    if(q.length < 2) return;
+    const res = await fetch(`${API_URL}/usuarios/buscar?q=${q}`);
+    const users = await res.json();
+    document.getElementById('usuarios-lista').innerHTML = users.filter(u => u.username !== usuario.username).map(u => `
+        <div class="bg-black/40 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+            <span class="font-black hud-text-sm uppercase italic">${u.username}</span>
+            <div class="flex gap-2">
+                <button onclick="setChatTarget('${u.username}')" class="bg-indigo-600/20 text-indigo-400 p-2 rounded-lg text-[10px] font-black">CHAT</button>
+                <button onclick="ejecutarDuelo('${u._id}')" class="bg-red-600/20 text-red-500 p-2 rounded-lg text-[10px] font-black">DUELO</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function setChatTarget(target) {
+    chatTarget = target;
+    document.getElementById('chat-target-label').innerText = target === 'global' ? "Chat Global" : `Chat con ${target}`;
+    switchSocial('chat');
+    cargarChat();
 }
 
 async function enviarMensaje() {
@@ -271,35 +296,31 @@ async function enviarMensaje() {
     await fetch(`${API_URL}/chat`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ emisor: usuario.username, texto: input.value })
+        body: JSON.stringify({ emisor: usuario.username, receptor: chatTarget, texto: input.value })
     });
     input.value = "";
     cargarChat();
 }
 
 async function cargarChat() {
-    const res = await fetch(`${API_URL}/chat`);
+    const res = await fetch(`${API_URL}/chat/${usuario.username}/${chatTarget}`);
     const msjs = await res.json();
     document.getElementById('chat-container').innerHTML = msjs.map(m => `
-        <div class="bg-black/40 p-2 rounded-xl border border-white/5">
-            <span class="text-indigo-400 font-black text-[9px] uppercase">${m.emisor}</span>
+        <div class="bg-black/40 p-2 rounded-xl border ${m.emisor === usuario.username ? 'border-indigo-500/30' : 'border-white/5'}">
+            <span class="${m.emisor === usuario.username ? 'text-indigo-400' : 'text-gray-500'} font-black text-[9px] uppercase">${m.emisor}</span>
             <p class="hud-text-xs text-gray-300">${m.texto}</p>
         </div>
-    `).reverse().join(''); // Reverse para que el último mensaje esté abajo
+    `).reverse().join('');
 }
 
-async function cargarUsuarios() {
-    const res = await fetch(`${API_URL}/usuarios`);
-    const users = await res.json();
-    document.getElementById('social-usuarios').innerHTML = users.filter(u => u.username !== usuario.username).map(u => `
-        <div class="bg-black/40 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
-            <span class="font-black hud-text-sm uppercase italic">${u.username}</span>
-            <div class="flex gap-2">
-                <button onclick="retarDuelo('${u._id}')" class="bg-red-600/20 text-red-500 p-2 rounded-lg text-[10px] font-black">DUELO</button>
-                <button onclick="notificar('Próximamente: Tradeo')" class="bg-indigo-600/20 text-indigo-400 p-2 rounded-lg text-[10px] font-black">TRADE</button>
-            </div>
-        </div>
-    `).join('');
+async function ejecutarDuelo(oponenteId) {
+    const res = await fetch(`${API_URL}/duelo`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ retadorId: usuario.id, oponenteId })
+    });
+    const data = await res.json();
+    if(data.error) return notificar(data.error, "error");
+    notificar(`¡${data.victoria ? 'GANASTE' : 'PERDISTE'}! ${data.detalle}`, data.victoria ? 'info' : 'error');
+    cargarDatos();
 }
-
-setInterval(() => { if(tabActual === 'social' && socialTabActual === 'chat') cargarChat(); }, 3000);
