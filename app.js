@@ -56,7 +56,12 @@ async function actualizarDinero() {
         const res = await fetch(`${API_URL}/perfil/${currentUser.id}`);
         const data = await res.json();
         document.getElementById('user-money').innerText = `$${data.dinero}`;
-    } catch(e) { console.error("Error saldo"); }
+        
+        // ESTA LÍNEA ES CLAVE: Activa el reloj al cargar el perfil
+        if (data.ultimaExploracion) {
+            checkCooldown(data.ultimaExploracion);
+        }
+    } catch(e) { console.error("Error al obtener perfil"); }
 }
 
 async function cargarHarem() {
@@ -176,10 +181,12 @@ async function iniciarExploracion() {
                 </div>
             `;
             
+                        // ... (dentro del setTimeout del fetch de explorar)
             historial.prepend(card);
 
             // Actualizamos la interfaz
             actualizarDinero();
+            checkCooldown(new Date());
             if (data.pj) cargarHarem();
             
         }, 3000);
@@ -192,3 +199,34 @@ async function iniciarExploracion() {
 }
 
 document.addEventListener('DOMContentLoaded', checkSession);
+
+let intervaloCooldown;
+
+function checkCooldown(ultimaFecha) {
+    if (!ultimaFecha) return;
+    
+    const btn = document.getElementById('btn-explorar');
+    const timerText = document.getElementById('cooldown-timer');
+    
+    if (intervaloCooldown) clearInterval(intervaloCooldown);
+
+    intervaloCooldown = setInterval(() => {
+        const ahora = new Date();
+        const ultima = new Date(ultimaFecha);
+        const proxima = new Date(ultima.getTime() + 3600000); // +1 hora
+        const diferencia = proxima - ahora;
+
+        if (diferencia > 0) {
+            btn.disabled = true;
+            const mins = Math.floor((diferencia % 3600000) / 60000);
+            const segs = Math.floor((diferencia % 60000) / 1000);
+            btn.innerText = `ESPERA: ${mins}m ${segs}s`;
+            timerText.innerText = "SISTEMA EN COOLDOWN";
+        } else {
+            btn.disabled = false;
+            btn.innerText = "⚔️ INICIAR EXPEDICIÓN";
+            timerText.innerText = "¡LISTO PARA EXPLORAR!";
+            clearInterval(intervaloCooldown);
+        }
+    }, 1000);
+}
