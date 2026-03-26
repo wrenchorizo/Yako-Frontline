@@ -132,5 +132,63 @@ function cerrarModal() {
     document.getElementById('modal-container').classList.add('opacity-0', 'pointer-events-none');
     cargarHarem();
 }
+// --- LÓGICA DEL MUNDO (EXPLORACIÓN) ---
+async function iniciarExploracion() {
+    const btnContainer = document.getElementById('controles-mundo');
+    const espera = document.getElementById('pantalla-espera');
+    const historial = document.getElementById('resultado-mundo');
+
+    // Cambiamos vista a "Cargando"
+    btnContainer.classList.add('hidden');
+    espera.classList.remove('hidden');
+
+    try {
+        const res = await fetch(`${API_URL}/explorar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id })
+        });
+        const data = await res.json();
+
+        // Esperamos 3 segundos para darle emoción
+        setTimeout(() => {
+            espera.classList.add('hidden');
+            btnContainer.classList.remove('hidden');
+
+            if (data.error) return alert(data.error);
+
+            // Crear una tarjeta de resultado
+            const card = document.createElement('div');
+            card.className = "bg-gray-800 border-l-4 border-green-500 p-4 rounded-r-xl animate-pulse";
+            
+            let extraInfo = "";
+            if (data.pj) {
+                extraInfo = `<br><span class="text-yellow-400 font-black">✨ ¡ENCONTRASTE A ${data.pj.nombre.toUpperCase()}!</span>`;
+            }
+
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-white font-bold">${data.mensaje}</p>
+                        ${extraInfo}
+                    </div>
+                    <i class="fas fa-coins text-yellow-500"></i>
+                </div>
+            `;
+            
+            historial.prepend(card);
+
+            // Actualizamos la interfaz
+            actualizarDinero();
+            if (data.pj) cargarHarem();
+            
+        }, 3000);
+
+    } catch (e) {
+        alert("Error de conexión con el Mundo");
+        espera.classList.add('hidden');
+        btnContainer.classList.remove('hidden');
+    }
+}
 
 document.addEventListener('DOMContentLoaded', checkSession);
