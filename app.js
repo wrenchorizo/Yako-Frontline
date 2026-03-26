@@ -1,42 +1,63 @@
+// SUSTITUYE POR TU LINK REAL DE RAILWAY (Sin / al final)
 const API_URL = "https://yako-production.up.railway.app"; 
 
 async function cargarHarem() {
-    console.log("Intentando conectar con:", API_URL); // Esto nos ayuda a ver errores
+    const contenedor = document.getElementById('harem-container');
     try {
         const respuesta = await fetch(`${API_URL}/harem`);
-        
-        if (!respuesta.ok) {
-            throw new Error(`Error en el servidor: ${respuesta.status}`);
-        }
-
         const personajes = await respuesta.json();
-        console.log("Personajes recibidos:", personajes);
-
-        const contenedor = document.getElementById('harem-container');
         
         if (personajes.length === 0) {
-            contenedor.innerHTML = "<p class='text-center col-span-full'>No hay personajes en la nube. ¡Captura uno!</p>";
+            contenedor.innerHTML = "<p class='text-center col-span-full text-gray-400'>Tu harem está vacío. ¡Invoca a alguien!</p>";
             return;
         }
 
-        contenedor.innerHTML = ""; // Limpiamos el "Cargando..."
-
+        contenedor.innerHTML = ""; // Limpiar carga
         personajes.forEach(pj => {
-            const card = `
-                <div class="bg-gray-800 p-4 rounded-xl border-2 border-yellow-500 shadow-lg mb-4">
-                    <img src="${pj.imagen || 'https://via.placeholder.com/150'}" class="w-full h-48 object-cover rounded-lg mb-4">
-                    <h2 class="text-xl font-bold text-white">${pj.nombre}</h2>
-                    <p class="text-yellow-400 font-bold text-lg text-center bg-gray-900 rounded-md py-1 mt-2">Nivel: ${pj.nivel}</p>
-                    <p class="text-gray-400 text-sm mt-2 italic">Propietario: ${pj.propietarioId || 'Sin dueño'}</p>
+            contenedor.innerHTML += `
+                <div class="bg-gray-800 p-4 rounded-2xl border-2 border-yellow-500 shadow-[0_0_15px_rgba(251,191,36,0.3)] transform transition hover:scale-105">
+                    <img src="${pj.imagen}" class="w-full h-52 object-cover rounded-xl mb-4 shadow-md" onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
+                    <h2 class="text-xl font-bold text-white text-center">${pj.nombre}</h2>
+                    <p class="text-blue-400 text-center text-sm font-medium mb-2">${pj.fuente}</p>
+                    <div class="flex justify-between items-center bg-gray-900 rounded-lg px-3 py-2">
+                        <span class="text-yellow-500 font-bold">NV. ${pj.nivel}</span>
+                        <span class="text-green-400 font-mono text-sm">${pj.valor}</span>
+                    </div>
                 </div>
             `;
-            contenedor.innerHTML += card;
         });
     } catch (error) {
-        console.error("❌ Error fatal:", error);
-        document.getElementById('harem-container').innerHTML = `<p class='text-red-500 text-center col-span-full'>Error de conexión: ${error.message}</p>`;
+        console.error(error);
+        contenedor.innerHTML = `<p class="text-red-500 text-center col-span-full font-bold">Error de conexión: Verifica el API_URL</p>`;
     }
 }
 
-// Ejecutar al cargar la página
+// Lógica del botón de Invocar
+document.getElementById('btn-invocar').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-invocar');
+    btn.innerText = "🌀 INVOCANDO...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/invocar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario: "Santiago" })
+        });
+
+        if (res.ok) {
+            const nuevo = await res.json();
+            // Una pequeña alerta para la emoción
+            alert(`✨ ¡HAS OBTENIDO A ${nuevo.nombre.toUpperCase()}! ✨`);
+            cargarHarem();
+        }
+    } catch (e) {
+        alert("El portal de invocación falló.");
+    } finally {
+        btn.innerText = "✨ INVOCAR PERSONAJE ✨";
+        btn.disabled = false;
+    }
+});
+
+// Iniciar al abrir la página
 document.addEventListener('DOMContentLoaded', cargarHarem);
