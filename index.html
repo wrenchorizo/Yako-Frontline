@@ -3,53 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YakApp - Colección</title>
+    <title>YakApp Multi-Verso</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0b0f1a; color: white; min-height: screen; }
-        .gacha-shadow { box-shadow: 0 0 60px rgba(139, 92, 246, 0.4); }
-        /* Animación suave para el buscador */
-        #buscador:focus { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+        body { background-color: #0b0f1a; color: white; overflow-x: hidden; }
+        .sidebar { transition: all 0.3s; }
+        .active-tab { background: #4f46e5; border-radius: 12px; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; flex-direction: row; z-index: 100; border-top: 1px solid #1e293b; }
+            .sidebar-text { display: none; }
+            .content-area { padding-bottom: 80px; }
+        }
     </style>
 </head>
-<body class="p-4 font-sans">
-    
-    <header class="text-center py-8">
-        <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">YAK APP</h1>
-        <p class="text-gray-400 mt-2 tracking-widest uppercase text-[10px]">Portal de Colección Gacha</p>
-    </header>
+<body class="flex flex-col md:flex-row min-h-screen">
 
-    <div class="max-w-4xl mx-auto mb-10 space-y-6">
-        <div class="flex justify-center">
-            <button id="btn-invocar" class="px-10 py-4 font-black text-white bg-gradient-to-br from-purple-600 to-blue-700 rounded-2xl hover:scale-105 active:scale-95 shadow-xl transition-all">
-                🌀 INVOCAR PERSONAJE
-            </button>
-        </div>
+    <nav class="sidebar bg-gray-900 w-full md:w-64 p-4 flex md:flex-col justify-around md:justify-start gap-4 border-r border-gray-800">
+        <h1 class="hidden md:block text-2xl font-black text-indigo-500 mb-10 text-center italic">YAKAPP</h1>
+        
+        <button onclick="changeTab('harem')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition active-tab w-full">
+            <i class="fas fa-gem w-6"></i> <span class="sidebar-text font-bold">Harem</span>
+        </button>
+        <button onclick="changeTab('mundo')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
+            <i class="fas fa-globe w-6"></i> <span class="sidebar-text font-bold">Mundo</span>
+        </button>
+        <button onclick="changeTab('battle')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
+            <i class="fas fa-swords w-6"></i> <span class="sidebar-text font-bold">Batalla</span>
+        </button>
+        <button onclick="changeTab('social')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
+            <i class="fas fa-users w-6"></i> <span class="sidebar-text font-bold">Social</span>
+        </button>
+        <button onclick="changeTab('settings')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
+            <i class="fas fa-cog w-6"></i> <span class="sidebar-text font-bold">Settings</span>
+        </button>
+    </nav>
 
-        <div class="relative">
-            <input type="text" id="buscador" placeholder="Buscar por nombre (ej: Goku, Star...)" 
-            class="w-full bg-gray-900 border border-gray-700 p-4 rounded-2xl text-white outline-none focus:border-purple-500 transition-all">
-        </div>
-    </div>
-
-    <div id="harem-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto pb-20">
-        </div>
-
-    <div id="modal-container" class="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div id="gacha-modal" class="bg-gray-900 p-6 rounded-3xl border-2 border-purple-500 text-center flex flex-col items-center w-full max-w-4xl gacha-shadow transform scale-90 transition-transform duration-300">
-            
-            <h3 class="text-purple-400 font-bold text-xl mb-4 italic">¡NUEVO GUERRERO OBTENIDO!</h3>
-            
-            <div class="w-full flex justify-center bg-black/40 rounded-2xl p-2 mb-4">
-                <img id="modal-imagen" src="" class="max-w-full max-h-[65vh] object-contain rounded-lg shadow-2xl" alt="Personaje">
+    <main class="flex-1 flex flex-col content-area">
+        
+        <header class="bg-gray-900/50 p-4 flex justify-between items-center border-b border-gray-800 sticky top-0 z-50 backdrop-blur">
+            <div class="md:hidden font-black text-indigo-500">YAKAPP</div>
+            <div class="hidden md:block text-gray-400 font-medium italic" id="tab-title">Mi Colección Harem</div>
+            <div class="bg-black/50 px-4 py-2 rounded-full border border-green-500/30 flex items-center gap-2">
+                <span class="text-green-400 font-mono font-bold" id="user-money">$0</span>
+                <i class="fas fa-coins text-yellow-500"></i>
             </div>
-            
-            <h2 id="modal-nombre" class="text-3xl font-black text-white uppercase italic"></h2>
-            <p id="modal-serie" class="text-blue-400 font-bold mb-6"></p>
-            
-            <button id="modal-cerrar" class="w-full max-w-xs bg-white text-black font-black py-4 rounded-xl hover:bg-gray-200 transition">
-                AÑADIR A LA COLECCIÓN
-            </button>
+        </header>
+
+        <section id="tab-harem" class="p-6">
+            <div class="max-w-4xl mx-auto mb-8">
+                <button id="btn-invocar" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
+                    🌀 INVOCAR NUEVO PERSONAJE
+                </button>
+                <input type="text" id="buscador" placeholder="Buscar en mi harem..." class="w-full mt-4 bg-gray-800 border-none p-4 rounded-xl text-white">
+            </div>
+            <div id="harem-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto"></div>
+        </section>
+
+        <section id="tab-mundo" class="hidden p-6 text-center">
+            <h2 class="text-3xl font-bold">Próximamente: Mundo</h2>
+            <p class="text-gray-500">Explora y derrota mobs cada hora.</p>
+        </section>
+        <section id="tab-battle" class="hidden p-6 text-center">
+            <h2 class="text-3xl font-bold">Próximamente: Batalla</h2>
+        </section>
+        <section id="tab-social" class="hidden p-6 text-center">
+            <h2 class="text-3xl font-bold">Próximamente: Social</h2>
+        </section>
+        <section id="tab-settings" class="hidden p-6 text-center">
+            <h2 class="text-3xl font-bold">Configuración</h2>
+        </section>
+    </main>
+
+    <div id="modal-container" class="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[200] opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="gacha-modal" class="bg-gray-900 p-6 rounded-3xl border-2 border-indigo-500 text-center w-full max-w-md transform scale-90 transition-all">
+            <img id="modal-imagen" src="" class="w-full max-h-[50vh] object-contain rounded-xl mb-4">
+            <h2 id="modal-nombre" class="text-2xl font-black italic"></h2>
+            <p id="modal-serie" class="text-indigo-400 mb-6"></p>
+            <button id="modal-cerrar" class="w-full bg-white text-black font-black py-3 rounded-xl">ACEPTAR</button>
         </div>
     </div>
 
