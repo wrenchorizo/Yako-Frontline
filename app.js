@@ -1,5 +1,5 @@
 // CONFIGURACIÓN CENTRAL
-const API_URL = "https://tu-app-en-railway.up.railway.app"; // Reemplaza con tu URL de Railway
+const API_URL = "https://yako-production.up.railway.app"; // Reemplaza con tu URL de Railway
 let usuario = JSON.parse(localStorage.getItem('yak_user')) || null;
 let equipo = [];
 let tabActual = 'harem';
