@@ -7,80 +7,65 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0b0f1a; color: white; overflow-x: hidden; }
-        .sidebar { transition: all 0.3s; }
+        body { background-color: #0b0f1a; color: white; min-height: 100vh; }
         .active-tab { background: #4f46e5; border-radius: 12px; }
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; flex-direction: row; z-index: 100; border-top: 1px solid #1e293b; }
-            .sidebar-text { display: none; }
-            .content-area { padding-bottom: 80px; }
-        }
+        .hidden { display: none; }
+        input::placeholder { color: #4b5563; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row min-h-screen">
+<body class="flex flex-col md:flex-row">
 
-    <nav class="sidebar bg-gray-900 w-full md:w-64 p-4 flex md:flex-col justify-around md:justify-start gap-4 border-r border-gray-800">
-        <h1 class="hidden md:block text-2xl font-black text-indigo-500 mb-10 text-center italic">YAKAPP</h1>
-        
-        <button onclick="changeTab('harem')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition active-tab w-full">
-            <i class="fas fa-gem w-6"></i> <span class="sidebar-text font-bold">Harem</span>
-        </button>
-        <button onclick="changeTab('mundo')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
-            <i class="fas fa-globe w-6"></i> <span class="sidebar-text font-bold">Mundo</span>
-        </button>
-        <button onclick="changeTab('battle')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
-            <i class="fas fa-swords w-6"></i> <span class="sidebar-text font-bold">Batalla</span>
-        </button>
-        <button onclick="changeTab('social')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
-            <i class="fas fa-users w-6"></i> <span class="sidebar-text font-bold">Social</span>
-        </button>
-        <button onclick="changeTab('settings')" class="flex items-center gap-3 p-3 hover:bg-gray-800 transition w-full">
-            <i class="fas fa-cog w-6"></i> <span class="sidebar-text font-bold">Settings</span>
-        </button>
-    </nav>
-
-    <main class="flex-1 flex flex-col content-area">
-        
-        <header class="bg-gray-900/50 p-4 flex justify-between items-center border-b border-gray-800 sticky top-0 z-50 backdrop-blur">
-            <div class="md:hidden font-black text-indigo-500">YAKAPP</div>
-            <div class="hidden md:block text-gray-400 font-medium italic" id="tab-title">Mi Colección Harem</div>
-            <div class="bg-black/50 px-4 py-2 rounded-full border border-green-500/30 flex items-center gap-2">
-                <span class="text-green-400 font-mono font-bold" id="user-money">$0</span>
-                <i class="fas fa-coins text-yellow-500"></i>
+    <div id="auth-screen" class="fixed inset-0 bg-gray-950 z-[300] flex items-center justify-center p-6">
+        <div class="bg-gray-900 p-8 rounded-3xl border border-indigo-500 max-w-sm w-full shadow-2xl">
+            <h1 class="text-3xl font-black text-indigo-500 text-center mb-8 italic italic">YAKAPP</h1>
+            <div class="space-y-4">
+                <input type="text" id="auth-user" placeholder="Nombre de usuario" class="w-full bg-black p-4 rounded-xl border border-gray-800 outline-none focus:border-indigo-500 text-white">
+                <input type="password" id="auth-pass" placeholder="Contraseña" class="w-full bg-black p-4 rounded-xl border border-gray-800 outline-none focus:border-indigo-500 text-white">
+                <button onclick="handleAuth('login')" class="w-full bg-indigo-600 py-4 rounded-xl font-black hover:bg-indigo-500 transition">ENTRAR</button>
+                <button onclick="handleAuth('register')" class="w-full text-indigo-400 font-bold text-sm">¿No tienes cuenta? Regístrate</button>
             </div>
-        </header>
+        </div>
+    </div>
 
-        <section id="tab-harem" class="p-6">
-            <div class="max-w-4xl mx-auto mb-8">
-                <button id="btn-invocar" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 font-black rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
-                    🌀 INVOCAR NUEVO PERSONAJE
-                </button>
-                <input type="text" id="buscador" placeholder="Buscar en mi harem..." class="w-full mt-4 bg-gray-800 border-none p-4 rounded-xl text-white">
-            </div>
-            <div id="harem-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto"></div>
-        </section>
+    <div id="game-screen" class="hidden flex flex-col md:flex-row w-full min-h-screen">
+        
+        <nav class="bg-gray-900 w-full md:w-64 p-4 flex md:flex-col justify-around md:justify-start gap-4 border-r border-gray-800 fixed bottom-0 md:relative z-50 h-[70px] md:h-screen">
+            <h1 class="hidden md:block text-2xl font-black text-indigo-500 mb-10 text-center">YAKAPP</h1>
+            <button onclick="changeTab('harem')" class="tab-btn flex items-center gap-3 p-3 active-tab w-full"><i class="fas fa-gem"></i> <span class="hidden md:inline font-bold">Harem</span></button>
+            <button onclick="changeTab('mundo')" class="tab-btn flex items-center gap-3 p-3 w-full"><i class="fas fa-globe"></i> <span class="hidden md:inline font-bold">Mundo</span></button>
+            <button onclick="changeTab('social')" class="tab-btn flex items-center gap-3 p-3 w-full"><i class="fas fa-users"></i> <span class="hidden md:inline font-bold">Social</span></button>
+            <button onclick="logout()" class="flex items-center gap-3 p-3 w-full text-red-500 mt-auto mb-4"><i class="fas fa-sign-out-alt"></i> <span class="hidden md:inline font-bold">Cerrar Sesión</span></button>
+        </nav>
 
-        <section id="tab-mundo" class="hidden p-6 text-center">
-            <h2 class="text-3xl font-bold">Próximamente: Mundo</h2>
-            <p class="text-gray-500">Explora y derrota mobs cada hora.</p>
-        </section>
-        <section id="tab-battle" class="hidden p-6 text-center">
-            <h2 class="text-3xl font-bold">Próximamente: Batalla</h2>
-        </section>
-        <section id="tab-social" class="hidden p-6 text-center">
-            <h2 class="text-3xl font-bold">Próximamente: Social</h2>
-        </section>
-        <section id="tab-settings" class="hidden p-6 text-center">
-            <h2 class="text-3xl font-bold">Configuración</h2>
-        </section>
-    </main>
+        <main class="flex-1 flex flex-col pb-[80px] md:pb-0 h-screen overflow-y-auto">
+            <header class="bg-gray-900/80 p-4 flex justify-between items-center border-b border-gray-800 sticky top-0 z-40 backdrop-blur-md">
+                <div class="font-black text-gray-300" id="user-display">Usuario</div>
+                <div class="bg-black/50 px-4 py-2 rounded-full border border-green-500/30 flex items-center gap-2">
+                    <span class="text-green-400 font-mono font-bold" id="user-money">$0</span>
+                    <i class="fas fa-coins text-yellow-500"></i>
+                </div>
+            </header>
 
-    <div id="modal-container" class="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[200] opacity-0 pointer-events-none transition-opacity duration-300">
-        <div id="gacha-modal" class="bg-gray-900 p-6 rounded-3xl border-2 border-indigo-500 text-center w-full max-w-md transform scale-90 transition-all">
+            <section id="tab-harem" class="p-6">
+                <div class="max-w-4xl mx-auto mb-8">
+                    <button id="btn-invocar" class="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 font-black rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all mb-6">
+                        🌀 INVOCAR PERSONAJE
+                    </button>
+                    <input type="text" id="buscador" placeholder="Buscar en mi colección..." class="w-full bg-gray-900 border border-gray-800 p-4 rounded-2xl outline-none focus:border-indigo-500">
+                </div>
+                <div id="harem-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </section>
+
+            <section id="tab-mundo" class="hidden p-10 text-center"><h2 class="text-2xl font-bold">Mundo (Próximamente)</h2></section>
+            <section id="tab-social" class="hidden p-10 text-center"><h2 class="text-2xl font-bold">Social (Próximamente)</h2></section>
+        </main>
+    </div>
+
+    <div id="modal-container" class="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[400] opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-gray-900 p-6 rounded-3xl border-2 border-indigo-500 text-center max-w-sm w-full shadow-[0_0_50px_rgba(79,70,229,0.3)]">
             <img id="modal-imagen" src="" class="w-full max-h-[50vh] object-contain rounded-xl mb-4">
-            <h2 id="modal-nombre" class="text-2xl font-black italic"></h2>
-            <p id="modal-serie" class="text-indigo-400 mb-6"></p>
-            <button id="modal-cerrar" class="w-full bg-white text-black font-black py-3 rounded-xl">ACEPTAR</button>
+            <h2 id="modal-nombre" class="text-2xl font-black uppercase italic"></h2>
+            <button onclick="cerrarModal()" class="w-full bg-white text-black font-black py-4 rounded-xl mt-6 hover:bg-gray-200">¡GENIAL!</button>
         </div>
     </div>
 
