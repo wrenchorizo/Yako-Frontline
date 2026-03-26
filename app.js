@@ -267,20 +267,60 @@ function switchSocial(sub) {
     document.getElementById('btn-tab-users').classList.toggle('bg-indigo-600/20', sub === 'usuarios');
 }
 
+let userEnMira = null; // Usuario seleccionado en el buscador
+
+function verPestanaSocial(tab) {
+    document.getElementById('vista-amigos').classList.toggle('hidden', tab !== 'amigos');
+    document.getElementById('vista-buscar').classList.toggle('hidden', tab !== 'buscar');
+    document.getElementById('btn-soc-amigos').className = tab === 'amigos' ? 'flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black' : 'flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black';
+    document.getElementById('btn-soc-buscar').className = tab === 'buscar' ? 'flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black' : 'flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black';
+}
+
 async function buscarUsuarios() {
-    const q = document.getElementById('user-search-input').value;
+    const q = document.getElementById('inp-search').value;
     if(q.length < 2) return;
-    const res = await fetch(`${API_URL}/usuarios/buscar?q=${q}`);
-    const users = await res.json();
-    document.getElementById('usuarios-lista').innerHTML = users.filter(u => u.username !== usuario.username).map(u => `
-        <div class="bg-black/40 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+    const res = await fetch(`${API_URL}/usuarios/buscar?q=${q}&miId=${usuario.id}`);
+    const data = await res.json();
+    
+    document.getElementById('res-busqueda').innerHTML = data.map(u => `
+        <div onclick="abrirAccionesUsuario('${u._id}', '${u.username}')" class="bg-black/40 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer hover:bg-indigo-900/20">
             <span class="font-black hud-text-sm uppercase italic">${u.username}</span>
-            <div class="flex gap-2">
-                <button onclick="setChatTarget('${u.username}')" class="bg-indigo-600/20 text-indigo-400 p-2 rounded-lg text-[10px] font-black">CHAT</button>
-                <button onclick="ejecutarDuelo('${u._id}')" class="bg-red-600/20 text-red-500 p-2 rounded-lg text-[10px] font-black">DUELO</button>
-            </div>
+            <i class="fas fa-chevron-right text-gray-700"></i>
         </div>
     `).join('');
+}
+
+function abrirAccionesUsuario(id, nombre) {
+    userEnMira = { id, nombre };
+    document.getElementById('acc-nombre').innerText = nombre;
+    const container = document.getElementById('contenedor-botones-acciones');
+    
+    // Aquí generamos los botones que pediste
+    container.innerHTML = `
+        <button onclick="enviarSol('amistad')" class="bg-indigo-600 py-3 rounded-xl font-black hud-text-xs uppercase">Añadir Amigo</button>
+        <button onclick="abrirMenuDuelo()" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs uppercase">Retar a Duelo</button>
+        <button onclick="abrirTrade()" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase">Trade</button>
+        <button onclick="regalarPj()" class="bg-yellow-600 py-3 rounded-xl font-black hud-text-xs uppercase">Regalar Personaje</button>
+        <div class="flex gap-2 mt-4">
+            <button onclick="bloquear()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Bloquear</button>
+            <button onclick="reportar()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Reportar</button>
+        </div>
+    `;
+    document.getElementById('modal-user-acciones').classList.remove('hidden');
+}
+
+async function enviarSol(tipo) {
+    await fetch(`${API_URL}/solicitud/enviar`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ emisorId: usuario.id, emisorName: usuario.username, receptorId: userEnMira.id, tipo })
+    });
+    notificar(`Solicitud de ${tipo} enviada`);
+    cerrarAcciones();
+}
+
+function cerrarAcciones() {
+    document.getElementById('modal-user-acciones').classList.add('hidden');
 }
 
 function setChatTarget(target) {
