@@ -139,31 +139,30 @@
                     <p id="invocar-timer" class="hud-text-xs text-gray-500 mt-4 font-black uppercase tracking-widest hidden"></p>
                 </div>
             </section>
-            <section id="tab-social" class="hidden p-4 h-full flex flex-col gap-4">
-<div class="bg-gray-900 rounded-[2rem] border border-gray-800 p-4 flex-1 flex flex-col overflow-hidden">
-    <div class="flex gap-2 mb-4">
-        <button onclick="switchSocial('chat')" id="btn-tab-chat" class="flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black">CHAT</button>
-        <button onclick="switchSocial('usuarios')" id="btn-tab-users" class="flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black">BUSCAR</button>
-    </div>
-
-    <div id="social-chat" class="flex-1 flex flex-col">
-        <div class="flex justify-between items-center mb-2 px-1">
-            <p id="chat-target-label" class="text-[9px] text-indigo-400 font-black uppercase tracking-tighter">Chat Global</p>
-            <button onclick="setChatTarget('global')" class="text-[9px] text-gray-500 font-black uppercase">Limpiar</button>
+          <section id="tab-social" class="hidden p-4 h-full flex flex-col gap-4">
+    <div class="bg-gray-900 rounded-[2rem] border border-gray-800 p-4 flex-1 flex flex-col overflow-hidden">
+        <div class="flex gap-2 mb-4">
+            <button onclick="verPestanaSocial('amigos')" id="btn-soc-amigos" class="flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black">AMIGOS</button>
+            <button onclick="verPestanaSocial('buscar')" id="btn-soc-buscar" class="flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black">BUSCAR</button>
         </div>
-        <div id="chat-container" class="chat-box space-y-2 p-2 mb-2 bg-black/20 rounded-2xl border border-white/5"></div>
-        <div class="flex gap-2">
-            <input type="text" id="chat-input" placeholder="Escribe..." class="flex-1 bg-black border border-gray-800 p-3 rounded-xl hud-text-xs outline-none">
-            <button onclick="enviarMensaje()" class="bg-indigo-600 px-4 rounded-xl"><i class="fas fa-paper-plane"></i></button>
+
+        <div id="vista-amigos" class="flex-1 overflow-y-auto space-y-2"></div>
+
+        <div id="vista-buscar" class="hidden flex-1 flex flex-col gap-3">
+            <input type="text" id="inp-search" oninput="buscarUsuarios()" placeholder="BUSCAR POR NOMBRE..." class="w-full bg-black border border-white/10 p-4 rounded-2xl hud-text-xs outline-none focus:border-indigo-500">
+            <div id="res-busqueda" class="space-y-2"></div>
         </div>
     </div>
+</section>
 
-    <div id="social-usuarios" class="hidden flex-1 flex flex-col gap-3">
-        <input type="text" id="user-search-input" oninput="buscarUsuarios()" placeholder="BUSCAR USUARIO..." class="w-full bg-black border border-indigo-500/30 p-3 rounded-xl hud-text-xs outline-none text-white font-black">
-        <div id="usuarios-lista" class="flex-1 overflow-y-auto space-y-2"></div>
+<div id="modal-user-acciones" class="hidden fixed inset-0 z-[6000] glass flex items-center justify-center p-6">
+    <div class="bg-gray-950 p-6 rounded-[2.5rem] border border-white/10 w-full max-w-xs text-center">
+        <h2 id="acc-nombre" class="text-xl font-black uppercase italic mb-6">---</h2>
+        <div class="flex flex-col gap-2" id="contenedor-botones-acciones">
+            </div>
+        <button onclick="cerrarAcciones()" class="mt-4 text-gray-500 hud-text-xs font-black uppercase">Cerrar</button>
     </div>
 </div>
-</section>
         </main>
     </div>
 
