@@ -74,10 +74,10 @@
                     </div>
 
                     <div id="controles-mundo">
-                        <button onclick="iniciarExploracion()" class="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-xl shadow-lg shadow-indigo-900/40 transition-all active:scale-95">
-                            ⚔️ INICIAR EXPEDICIÓN
-                        </button>
-                        <p class="text-[10px] text-indigo-400 mt-4 uppercase tracking-[0.2em] font-bold">Límite: 1 expedición por hora</p>
+    <button id="btn-explorar" onclick="iniciarExploracion()" class="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-xl shadow-lg shadow-indigo-900/40 transition-all active:scale-95 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none">
+        ⚔️ INICIAR EXPEDICIÓN
+    </button>
+    <p id="cooldown-timer" class="text-[10px] text-indigo-400 mt-4 uppercase tracking-[0.2em] font-bold">Límite: 1 expedición por hora</p>
                     </div>
                 </div>
 
