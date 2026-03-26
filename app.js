@@ -80,22 +80,43 @@ async function cargarDatos() {
 }
 
 async function cargarHarem() {
-    const res = await fetch(`${API_URL}/harem/${usuario.id}`);
-    const pjs = await res.json();
-    const container = document.getElementById('harem-container');
-    container.innerHTML = "";
+    try {
+        const res = await fetch(`${API_URL}/harem/${usuario.id}`);
+        const pjs = await res.json();
+        const container = document.getElementById('harem-container');
+        container.innerHTML = "";
 
-    pjs.forEach(pj => {
-        const card = document.createElement('div');
-        card.className = "bg-gray-900 rounded-2xl border border-gray-800 p-2 cursor-pointer hover:border-indigo-500 transition-all";
-        card.onclick = () => abrirDetalles(pj);
-        card.innerHTML = `
-            <img src="${pj.imagen}" class="w-full h-24 object-contain mb-2">
-            <h3 class="hud-text-xs font-black truncate text-center">${pj.nombre}</h3>
-            <div class="w-full bg-gray-800 h-1 mt-1 rounded-full"><div class="bg-indigo-500 h-full" style="width:${pj.stamina}%"></div></div>
-        `;
-        container.appendChild(card);
-    });
+        // SI NO HAY PERSONAJES
+        if (pjs.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full py-20 text-center flex flex-col items-center justify-center animate-pulse">
+                    <i class="fas fa-ghost text-5xl text-gray-800 mb-4"></i>
+                    <h3 class="text-gray-500 font-black uppercase hud-text-sm tracking-tighter">Harem vacío</h3>
+                    <p class="text-indigo-400 font-bold hud-text-xs mt-2 uppercase tracking-widest">Prueba invocar personajes en el Portal</p>
+                </div>
+            `;
+            return;
+        }
+
+        // SI HAY PERSONAJES, SE GENERAN LAS TARJETAS
+        pjs.forEach(pj => {
+            const card = document.createElement('div');
+            card.className = "bg-gray-900 rounded-2xl border border-gray-800 p-2 cursor-pointer hover:border-indigo-500 transition-all group";
+            card.onclick = () => abrirDetalles(pj);
+            card.innerHTML = `
+                <div class="relative overflow-hidden rounded-xl mb-2 bg-black/20">
+                    <img src="${pj.imagen}" class="w-full h-24 object-contain group-hover:scale-110 transition-transform duration-300">
+                </div>
+                <h3 class="hud-text-xs font-black truncate text-center uppercase tracking-tighter">${pj.nombre}</h3>
+                <div class="w-full bg-gray-800 h-1 mt-2 rounded-full overflow-hidden">
+                    <div class="bg-indigo-500 h-full transition-all" style="width:${pj.stamina}%"></div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (e) {
+        console.error("Error cargando el harem:", e);
+    }
 }
 
 // --- DETALLES Y STAMINA ---
