@@ -60,7 +60,30 @@
                 <div id="harem-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto pb-10"></div>
             </section>
 
-            <section id="tab-mundo" class="hidden p-20 text-center"><i class="fas fa-lock text-4xl mb-4 text-gray-700"></i><h2 class="text-xl font-bold text-gray-600">Mundo en construcción</h2></section>
+            <section id="tab-mundo" class="hidden p-6 max-w-4xl mx-auto">
+                <div class="bg-gradient-to-b from-gray-800 to-gray-950 rounded-3xl p-8 border border-indigo-500/30 text-center shadow-2xl">
+                    <div class="mb-8">
+                        <i class="fas fa-map-marked-alt text-6xl text-indigo-500 mb-4 animate-pulse"></i>
+                        <h2 class="text-3xl font-black italic uppercase">Exploración Dimensional</h2>
+                        <p class="text-gray-400 text-sm mt-2">Envía a tus personajes a recolectar recursos y dinero.</p>
+                    </div>
+
+                    <div id="pantalla-espera" class="hidden py-10">
+                        <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-indigo-400 font-bold">EXPLORANDO EL MULTIVERSO...</p>
+                    </div>
+
+                    <div id="controles-mundo">
+                        <button onclick="iniciarExploracion()" class="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-xl shadow-lg shadow-indigo-900/40 transition-all active:scale-95">
+                            ⚔️ INICIAR EXPEDICIÓN
+                        </button>
+                        <p class="text-[10px] text-gray-500 mt-4 uppercase tracking-widest">Costo: $0 | Tiempo: 3 segundos</p>
+                    </div>
+                </div>
+
+                <div id="resultado-mundo" class="mt-6 space-y-4 h-[300px] overflow-y-auto pr-2">
+                    </div>
+            </section>
             <section id="tab-social" class="hidden p-20 text-center"><i class="fas fa-lock text-4xl mb-4 text-gray-700"></i><h2 class="text-xl font-bold text-gray-600">Social en construcción</h2></section>
         </main>
     </div>
