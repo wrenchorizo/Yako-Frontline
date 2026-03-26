@@ -57,13 +57,34 @@ async function actualizarDinero() {
         const data = await res.json();
         document.getElementById('user-money').innerText = `$${data.dinero}`;
         
-        // ESTA LÍNEA ES CLAVE: Activa el reloj al cargar el perfil
-        if (data.ultimaExploracion) {
-            checkCooldown(data.ultimaExploracion);
-        }
-    } catch(e) { console.error("Error al obtener perfil"); }
-}
+        // Controlar ambos cooldowns
+        function checkCooldown(ultimaFecha, btnId, textId, originalText) {
+    const btn = document.getElementById(btnId);
+    const timerText = document.getElementById(textId);
+    if (!btn || !timerText) return;
 
+    const actualizar = () => {
+        const ahora = new Date();
+        const proxima = new Date(new Date(ultimaFecha).getTime() + 3600000);
+        const diferencia = proxima - ahora;
+
+        if (diferencia > 0) {
+            btn.disabled = true;
+            const mins = Math.floor((diferencia % 3600000) / 60000);
+            const segs = Math.floor((diferencia % 60000) / 1000);
+            btn.innerText = `⏳ ${mins}m ${segs}s`;
+            timerText.innerText = "RECARGANDO ENERGÍA...";
+        } else {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            timerText.innerText = "¡LISTO!";
+        }
+    };
+
+    actualizar();
+    setInterval(actualizar, 1000);
+        }
+    
 async function cargarHarem() {
     const contenedor = document.getElementById('harem-container');
     const res = await fetch(`${API_URL}/harem/${currentUser.id}`);
@@ -133,6 +154,12 @@ document.getElementById('btn-invocar').addEventListener('click', async () => {
     btn.innerText = "🌀 INVOCAR PERSONAJE";
 });
 
+// ... dentro de la respuesta exitosa del fetch de invocar ...
+if (!data.error) {
+    // (mostrar modal, etc)
+    checkCooldown(new Date(), 'btn-invocar', 'invocar-timer', '🌀 INVOCAR PERSONAJE');
+}
+        
 function cerrarModal() {
     document.getElementById('modal-container').classList.add('opacity-0', 'pointer-events-none');
     cargarHarem();
