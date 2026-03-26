@@ -35,6 +35,12 @@
         
         /* Animación suave para notificaciones */
         #notificador { z-index: 9999; pointer-events: none; }
+        .bg-portal { 
+    background: linear-gradient(rgba(5,7,10,0.85), rgba(5,7,10,0.85)), 
+                url('https://i.pinimg.com/236x/d2/e3/c6/d2e3c621e0474fe592547c199be0cf5b.jpg');
+    background-size: cover; background-position: center;
+}
+.chat-box { height: 300px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen w-full overflow-hidden">
@@ -80,6 +86,9 @@
                 <button onclick="changeTab('invocacion', this)" class="tab-btn p-3 flex items-center gap-4 text-gray-500 transition-all">
                     <i class="fas fa-door-open text-lg"></i> <span class="nav-text hidden font-black uppercase hud-text-xs">Invocación</span>
                 </button>
+                <button onclick="changeTab('social', this)" class="tab-btn p-3 flex items-center gap-4 text-gray-500 transition-all">
+    <i class="fas fa-comments text-lg"></i> <span class="nav-text hidden font-black uppercase hud-text-xs">Social</span>
+</button>
             </div>
 
             <button onclick="confirmarLogout()" class="p-3 flex items-center gap-4 text-red-500 mt-auto transition-all">
@@ -119,7 +128,7 @@
                 </div>
             </section>
 
-            <section id="tab-invocacion" class="hidden p-6 max-w-sm mx-auto">
+          <section id="tab-invocacion" class="hidden h-full bg-portal flex flex-col justify-center p-6">
                 <div class="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 text-center shadow-xl">
                     <h2 class="text-2xl font-black mb-1 uppercase italic tracking-tighter">Portal</h2>
                     <p class="text-gray-500 hud-text-xs mb-8 font-bold uppercase tracking-widest">Ruleta Dimensional</p>
@@ -130,6 +139,22 @@
                     <p id="invocar-timer" class="hud-text-xs text-gray-500 mt-4 font-black uppercase tracking-widest hidden"></p>
                 </div>
             </section>
+            <section id="tab-social" class="hidden p-4 h-full flex flex-col gap-4">
+    <div class="bg-gray-900 rounded-[2rem] border border-gray-800 p-4 flex-1 flex flex-col overflow-hidden">
+        <div class="flex gap-2 mb-4">
+            <button onclick="switchSocial('chat')" class="flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black">CHAT</button>
+            <button onclick="switchSocial('usuarios')" class="flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black">USUARIOS</button>
+        </div>
+        <div id="social-chat" class="flex-1 flex flex-col">
+            <div id="chat-container" class="chat-box space-y-2 p-2 mb-2"></div>
+            <div class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Mensaje..." class="flex-1 bg-black border border-gray-800 p-3 rounded-xl hud-text-xs outline-none">
+                <button onclick="enviarMensaje()" class="bg-indigo-600 px-4 rounded-xl"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <div id="social-usuarios" class="hidden flex-1 overflow-y-auto space-y-2"></div>
+    </div>
+</section>
         </main>
     </div>
 
