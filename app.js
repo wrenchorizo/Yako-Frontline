@@ -1,26 +1,45 @@
 // CONFIGURACIÓN CENTRAL
-const API_URL = "https://yako-production.up.railway.app"; // Reemplaza con tu URL de Railway
+const API_URL = "https://tu-app-en-railway.up.railway.app"; // CAMBIA ESTO POR TU URL REAL
 let usuario = JSON.parse(localStorage.getItem('yak_user')) || null;
 let equipo = [];
 let tabActual = 'harem';
+let invTimerInterval = null;
 
-// --- SISTEMA DE NOTIFICACIONES (Z-INDEX ALTO Y TAMAÑO REDUCIDO) ---
+// --- NOTIFICACIONES ---
 function notificar(msj, tipo = 'info') {
     const container = document.getElementById('notificador');
     const div = document.createElement('div');
-    div.className = `p-3 rounded-lg border shadow-xl animate-bounce-in hud-text-sm font-bold uppercase tracking-wider flex items-center gap-2 pointer-events-auto min-w-[200px] 
+    div.className = `p-3 rounded-xl border shadow-2xl animate-bounce-in hud-text-xs font-black uppercase tracking-widest flex items-center gap-3 pointer-events-auto min-w-[220px] 
         ${tipo === 'error' ? 'bg-red-950 border-red-500 text-red-200' : 'bg-gray-900 border-indigo-500 text-indigo-100'}`;
-    
-    div.innerHTML = `<i class="fas ${tipo === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${msj}`;
+    div.innerHTML = `<i class="fas ${tipo === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msj}`;
     container.appendChild(div);
-    setTimeout(() => div.remove(), 4000);
+    setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 500); }, 3500);
+}
+
+// --- NAVEGACIÓN Y MENÚ ---
+function toggleSidebar() {
+    const side = document.getElementById('sidebar');
+    const texts = document.querySelectorAll('.nav-text');
+    side.classList.toggle('expanded');
+    texts.forEach(t => t.classList.toggle('hidden'));
+}
+
+function changeTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab', 'text-white'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('text-gray-500'));
+    btn.classList.add('active-tab', 'text-white');
+    btn.classList.remove('text-gray-500');
+
+    ['harem', 'mundo', 'invocacion'].forEach(t => document.getElementById(`tab-${t}`).classList.add('hidden'));
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    tabActual = tab;
 }
 
 // --- AUTENTICACIÓN ---
 async function handleAuth(type) {
     const user = document.getElementById('auth-user').value;
     const pass = document.getElementById('auth-pass').value;
-    if(!user || !pass) return notificar("Faltan datos", "error");
+    if(!user || !pass) return notificar("Campos vacíos", "error");
 
     try {
         const res = await fetch(`${API_URL}/${type}`, {
@@ -34,28 +53,30 @@ async function handleAuth(type) {
         if(type === 'login') {
             usuario = data;
             localStorage.setItem('yak_user', JSON.stringify(data));
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            notificar(`Bienvenido, ${usuario.username}`);
-            cargarDatos();
+            location.reload();
         } else {
-            notificar("¡Registro exitoso! Ya puedes entrar.");
+            notificar("¡Cuenta creada! Inicia sesión.");
         }
-    } catch (e) { notificar(e.message, "error"); }
+    } catch (e) { notificar("Error de conexión", "error"); }
 }
+
+function confirmarLogout() { document.getElementById('modal-logout').classList.remove('hidden'); }
+function cerrarModalLogout() { document.getElementById('modal-logout').classList.add('hidden'); }
+function logoutReal() { localStorage.clear(); location.reload(); }
 
 // --- CARGA DE DATOS ---
 async function cargarDatos() {
     if(!usuario) return;
-    const resUser = await fetch(`${API_URL}/perfil/${usuario.id}`);
-    const dataUser = await resUser.json();
-    
-    // Actualizar HUD (Sin palabra "Comandante")
-    document.getElementById('user-display').innerText = dataUser.username.toUpperCase();
-    document.getElementById('user-money').innerText = `$${dataUser.balance.toLocaleString()}`;
-    
-    cargarHarem();
-    verificarEstadoMision(dataUser);
+    try {
+        const res = await fetch(`${API_URL}/perfil/${usuario.id}`);
+        const data = await res.json();
+        document.getElementById('user-display').innerText = data.username;
+        document.getElementById('user-money').innerText = `$${data.balance.toLocaleString()}`;
+        
+        if(data.ultimaInvocacion) iniciarTimerInvocacion(data.ultimaInvocacion);
+        verificarMision(data);
+        cargarHarem();
+    } catch (e) { console.error(e); }
 }
 
 async function cargarHarem() {
@@ -66,28 +87,18 @@ async function cargarHarem() {
 
     pjs.forEach(pj => {
         const card = document.createElement('div');
-        // HUD de tarjeta reducido
-        card.className = "gacha-card bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 hover:border-indigo-500 transition-all cursor-pointer group";
+        card.className = "bg-gray-900 rounded-2xl border border-gray-800 p-2 cursor-pointer hover:border-indigo-500 transition-all";
         card.onclick = () => abrirDetalles(pj);
         card.innerHTML = `
-            <div class="relative h-32 md:h-40 bg-black/20 overflow-hidden">
-                <img src="${pj.imagen}" class="w-full h-full object-contain group-hover:scale-110 transition-transform">
-                <div class="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black text-[10px] font-black italic">
-                    NV. ${pj.nivel}
-                </div>
-            </div>
-            <div class="p-2">
-                <h3 class="hud-text-sm font-black truncate uppercase tracking-tighter">${pj.nombre}</h3>
-                <div class="w-full bg-gray-800 h-1 mt-1 rounded-full overflow-hidden">
-                    <div class="bg-indigo-500 h-full" style="width: ${pj.stamina}%"></div>
-                </div>
-            </div>
+            <img src="${pj.imagen}" class="w-full h-24 object-contain mb-2">
+            <h3 class="hud-text-xs font-black truncate text-center">${pj.nombre}</h3>
+            <div class="w-full bg-gray-800 h-1 mt-1 rounded-full"><div class="bg-indigo-500 h-full" style="width:${pj.stamina}%"></div></div>
         `;
         container.appendChild(card);
     });
 }
 
-// --- DETALLES Y ENTRENAMIENTO ---
+// --- DETALLES Y STAMINA ---
 let pjSeleccionado = null;
 function abrirDetalles(pj) {
     pjSeleccionado = pj;
@@ -95,44 +106,36 @@ function abrirDetalles(pj) {
     document.getElementById('det-nombre').innerText = pj.nombre;
     document.getElementById('det-fuente').innerText = pj.fuente;
     document.getElementById('det-nivel').innerText = pj.nivel;
-    document.getElementById('det-valor').innerText = `$${pj.valor}`;
-    // Cambio de género: Hombre/Mujer
-    document.getElementById('det-genero').innerText = pj.genero === "Mujer" ? "Mujer" : "Hombre";
+    document.getElementById('det-genero').innerText = pj.genero === "Mujer" ? "MUJER" : "HOMBRE";
+    document.getElementById('det-stamina-bar').style.width = `${pj.stamina}%`;
+    document.getElementById('det-stamina-text').innerText = `${pj.stamina}%`;
     
-    const btnEquipo = document.getElementById('btn-toggle-equipo');
     const estaEnEquipo = equipo.find(p => p._id === pj._id);
-    btnEquipo.innerText = estaEnEquipo ? "Quitar del Equipo" : "Añadir al Equipo";
-    
+    document.getElementById('btn-toggle-equipo').innerText = estaEnEquipo ? "QUITAR DEL EQUIPO" : "AÑADIR AL EQUIPO";
     document.getElementById('modal-detalles').classList.remove('hidden');
 }
 
-function cerrarDetalles() {
-    document.getElementById('modal-detalles').classList.add('hidden');
-    pjSeleccionado = null;
-}
+function cerrarDetalles() { document.getElementById('modal-detalles').classList.add('hidden'); }
 
 async function entrenarPj() {
-    try {
-        const res = await fetch(`${API_URL}/subir-nivel/${pjSeleccionado._id}`, { method: 'PUT' });
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-        
-        notificar(`${pjSeleccionado.nombre} ha subido de nivel`);
-        abrirDetalles(data.pj); // Recargar modal
-        cargarDatos();
-    } catch (e) { notificar(e.message, "error"); }
+    const res = await fetch(`${API_URL}/subir-nivel/${pjSeleccionado._id}`, { method: 'PUT' });
+    const data = await res.json();
+    if(data.error) return notificar(data.error, "error");
+    notificar(`${pjSeleccionado.nombre} nivel UP!`);
+    abrirDetalles(data.pj);
+    cargarDatos();
 }
 
-// --- SISTEMA DE EQUIPO Y AVENTURA ---
+// --- AVENTURA Y DERROTA ---
 function toggleEquipo() {
-    const index = equipo.findIndex(p => p._id === pjSeleccionado._id);
-    if(index > -1) {
-        equipo.splice(index, 1);
-        notificar(`${pjSeleccionado.nombre} fuera del equipo`);
+    const idx = equipo.findIndex(p => p._id === pjSeleccionado._id);
+    if(idx > -1) {
+        equipo.splice(idx, 1);
+        notificar(`${pjSeleccionado.nombre} fuera`);
     } else {
-        if(equipo.length >= 3) return notificar("Máximo 3 miembros", "error");
+        if(equipo.length >= 3) return notificar("Máximo 3", "error");
         equipo.push(pjSeleccionado);
-        notificar(`${pjSeleccionado.nombre} ahora es parte del equipo`); // Mensaje sin género
+        notificar(`${pjSeleccionado.nombre} se unió al equipo`);
     }
     actualizarSlots();
     cerrarDetalles();
@@ -140,121 +143,91 @@ function toggleEquipo() {
 
 function actualizarSlots() {
     const slots = document.getElementById('slots-equipo').children;
-    for(let i=0; i<3; i++) {
-        if(equipo[i]) {
-            slots[i].innerHTML = `<img src="${equipo[i].imagen}" class="w-full h-full object-cover rounded-2xl border border-indigo-500">`;
-        } else {
-            slots[i].innerHTML = (i+1);
-        }
-    }
+    for(let i=0; i<3; i++) slots[i].innerHTML = equipo[i] ? `<img src="${equipo[i].imagen}" class="w-full h-full object-contain">` : (i+1);
 }
 
 async function iniciarExploracion() {
     if(equipo.length === 0) return notificar("Equipo vacío", "error");
-    try {
-        const res = await fetch(`${API_URL}/explorar`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ userId: usuario.id, pjsSeleccionados: equipo.map(p => p._id) })
-        });
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-        
-        equipo = [];
-        actualizarSlots();
-        cargarDatos();
-    } catch (e) { notificar(e.message, "error"); }
+    const res = await fetch(`${API_URL}/explorar`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ userId: usuario.id, pjsSeleccionados: equipo.map(p => p._id) })
+    });
+    const data = await res.json();
+    equipo = []; actualizarSlots(); cargarDatos();
 }
 
-function verificarEstadoMision(user) {
+function verificarMision(user) {
     const inactivo = document.getElementById('mundo-inactivo');
     const activo = document.getElementById('mundo-activo');
-    
     if(user.finExploracion) {
-        inactivo.classList.add('hidden');
-        activo.classList.remove('hidden');
-        iniciarTimer(new Date(user.finExploracion));
+        inactivo.classList.add('hidden'); activo.classList.remove('hidden');
+        iniciarTimerMision(new Date(user.finExploracion));
     } else {
-        inactivo.classList.remove('hidden');
-        activo.classList.add('hidden');
+        inactivo.classList.remove('hidden'); activo.classList.add('hidden');
     }
 }
 
-function iniciarTimer(fin) {
+function iniciarTimerMision(fin) {
     const interval = setInterval(async () => {
-        const ahora = new Date();
-        const diff = fin - ahora;
+        const diff = fin - new Date();
         if(diff <= 0) {
             clearInterval(interval);
-            reclamarRecompensa();
+            const res = await fetch(`${API_URL}/mision/reclamar/${usuario.id}`, { method: 'POST' });
+            const data = await res.json();
+            if(data.fueVencido) notificar("¡DERROTADOS! Regresan sin energía.", "error");
+            else notificar(`¡Misión éxito! +$${data.ganancia}`);
+            cargarDatos();
         } else {
-            const m = Math.floor(diff/60000);
-            const s = Math.floor((diff%60000)/1000);
+            const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
             document.getElementById('timer-mision').innerText = `${m}:${s < 10 ? '0'+s : s}`;
         }
     }, 1000);
 }
 
-async function reclamarRecompensa() {
-    const res = await fetch(`${API_URL}/mision/reclamar/${usuario.id}`, { method: 'POST' });
+// --- INVOCACIÓN (TIMER MM:SS) ---
+function iniciarTimerInvocacion(fecha) {
+    if(invTimerInterval) clearInterval(invTimerInterval);
+    const btn = document.getElementById('btn-invocar');
+    const label = document.getElementById('invocar-timer');
+    
+    invTimerInterval = setInterval(() => {
+        const diff = new Date(fecha).getTime() + 1200000 - Date.now();
+        if(diff <= 0) {
+            clearInterval(invTimerInterval);
+            btn.disabled = false; btn.innerText = "INVOCAR";
+            label.classList.add('hidden');
+        } else {
+            btn.disabled = true;
+            label.classList.remove('hidden');
+            const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
+            btn.innerText = "RECARGANDO...";
+            label.innerText = `DISPONIBLE EN ${m}:${s < 10 ? '0'+s : s}`;
+        }
+    }, 1000);
+}
+
+async function intentarInvocacion() {
+    const res = await fetch(`${API_URL}/invocar`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ userId: usuario.id })
+    });
     const data = await res.json();
-    notificar(`Misión completada: Ganaste $${data.ganancia}`); // Ahora dice cuánto ganaste
+    if(data.error) return notificar(data.error, "error");
+
+    document.getElementById('inv-img').src = data.imagen;
+    document.getElementById('inv-nombre').innerText = data.nombre;
+    document.getElementById('inv-fuente').innerText = data.fuente;
+    const disp = document.getElementById('inv-disponibilidad');
+    disp.innerText = data.estado;
+    disp.className = data.disponible ? "p-3 rounded-xl border border-green-500/30 text-green-400 font-black" : "p-3 rounded-xl border border-red-500/30 text-red-400 font-black";
+    
+    document.getElementById('modal-invocacion').classList.remove('hidden');
     cargarDatos();
 }
 
-// --- SISTEMA DE INVOCACIÓN (20 MIN + ESTADO RECLAMADO) ---
-async function intentarInvocacion() {
-    try {
-        const res = await fetch(`${API_URL}/invocar`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ userId: usuario.id })
-        });
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-
-        // Mostrar resultado en modal
-        document.getElementById('inv-img').src = data.imagen;
-        document.getElementById('inv-nombre').innerText = data.nombre;
-        document.getElementById('inv-fuente').innerText = data.fuente;
-        
-        const dispLabel = document.getElementById('inv-disponibilidad');
-        if(data.estado === "Ya reclamado") {
-            dispLabel.innerText = "ESTADO: YA RECLAMADO";
-            dispLabel.className = "font-bold uppercase hud-text-md tracking-wider text-red-500";
-        } else {
-            dispLabel.innerText = "ESTADO: ¡NUEVO!";
-            dispLabel.className = "font-bold uppercase hud-text-md tracking-wider text-green-400";
-        }
-
-        document.getElementById('modal-invocacion').classList.remove('hidden');
-        cargarDatos();
-    } catch (e) { notificar(e.message, "error"); }
-}
-
-function cerrarInvocacion() {
-    document.getElementById('modal-invocacion').classList.add('hidden');
-}
-
-// --- NAVEGACIÓN ---
-function changeTab(tab, btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab', 'text-white'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('text-gray-500'));
-    btn.classList.add('active-tab', 'text-white');
-    btn.classList.remove('text-gray-500');
-
-    document.getElementById('tab-harem').classList.add('hidden');
-    document.getElementById('tab-mundo').classList.add('hidden');
-    document.getElementById('tab-invocacion').classList.add('hidden');
-
-    document.getElementById(`tab-${tab}`).classList.remove('hidden');
-    tabActual = tab;
-}
-
-function logout() {
-    localStorage.clear();
-    location.reload();
-}
+function cerrarInvocacion() { document.getElementById('modal-invocacion').classList.add('hidden'); }
 
 // INICIO
 if(usuario) {
