@@ -2,64 +2,133 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>YakApp RPG</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #05070a; color: white; font-family: 'Inter', sans-serif; }
-        .active-tab { background: #4f46e5; border-radius: 12px; }
-        .gacha-card { transition: all 0.2s; border: 1px solid #1f2937; }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+        body { background: #05070a; color: white; font-family: 'Outfit', sans-serif; overflow: hidden; }
+        .active-tab { background: #4f46e5; color: white !important; border-radius: 16px; }
+        .gacha-card { border: 1px solid #1f2937; }
         .hidden { display: none !important; }
+        /* Vidrio para modales */
+        .glass { background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); }
+        /* Scroll personalizado */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #312e81; border-radius: 10px; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row min-h-screen">
-    <div id="notificador" class="fixed top-5 right-5 z-[500] space-y-3 pointer-events-none"></div>
+<body class="flex flex-col md:flex-row h-screen w-full">
 
-    <div id="auth-screen" class="fixed inset-0 bg-black z-[600] flex items-center justify-center p-6">
-        <div class="bg-gray-900 p-8 rounded-3xl border border-indigo-500/30 w-full max-w-sm">
-            <h1 class="text-3xl font-black text-center text-indigo-500 mb-6 italic">YAKAPP</h1>
-            <input type="text" id="auth-user" placeholder="Usuario" class="w-full bg-black p-4 rounded-xl mb-4 border border-gray-800 outline-none">
-            <input type="password" id="auth-pass" placeholder="Password" class="w-full bg-black p-4 rounded-xl mb-6 border border-gray-800 outline-none">
-            <button onclick="handleAuth('login')" class="w-full bg-indigo-600 py-4 rounded-xl font-bold uppercase">Entrar</button>
+    <div id="notificador" class="fixed top-5 right-5 z-[1000] space-y-3 pointer-events-none"></div>
+
+    <div id="auth-screen" class="fixed inset-0 bg-black z-[900] flex items-center justify-center p-6">
+        <div class="bg-gray-900 p-8 rounded-[2.5rem] border border-indigo-500/30 w-full max-w-sm text-center shadow-2xl">
+            <h1 class="text-4xl font-black text-indigo-500 mb-8 italic tracking-tighter">YAKAPP</h1>
+            <input type="text" id="auth-user" placeholder="USUARIO" class="w-full bg-black p-4 rounded-2xl mb-4 border border-gray-800 outline-none focus:border-indigo-500 transition-all">
+            <input type="password" id="auth-pass" placeholder="CONTRASEÑA" class="w-full bg-black p-4 rounded-2xl mb-8 border border-gray-800 outline-none focus:border-indigo-500 transition-all">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="handleAuth('login')" class="bg-indigo-600 py-4 rounded-2xl font-black uppercase text-sm">Entrar</button>
+                <button onclick="handleAuth('register')" class="bg-gray-800 py-4 rounded-2xl font-black uppercase text-sm border border-gray-700">Unirse</button>
+            </div>
         </div>
     </div>
 
-    <div id="game-screen" class="hidden flex flex-col md:flex-row w-full">
-        <nav class="bg-gray-900 w-full md:w-64 p-4 border-r border-gray-800 flex md:flex-col gap-2">
-            <button onclick="changeTab('harem', this)" class="tab-btn p-4 w-full text-left active-tab font-bold"><i class="fas fa-heart mr-2"></i>Harem</button>
-            <button onclick="changeTab('mundo', this)" class="tab-btn p-4 w-full text-left font-bold text-gray-400"><i class="fas fa-map mr-2"></i>Mundo</button>
-            <button onclick="logout()" class="p-4 mt-auto text-red-500 font-bold"><i class="fas fa-sign-out-alt mr-2"></i>Salir</button>
+    <div id="game-screen" class="hidden flex flex-col md:flex-row w-full h-full">
+        
+        <nav class="bg-gray-900/50 backdrop-blur-xl border-t md:border-t-0 md:border-r border-gray-800 p-4 flex flex-row md:flex-col gap-2 order-2 md:order-1 w-full md:w-64 fixed bottom-0 md:relative z-50">
+            <button onclick="changeTab('harem', this)" class="tab-btn flex-1 md:flex-none p-4 text-center md:text-left active-tab font-black text-[10px] md:text-sm uppercase tracking-widest transition-all">
+                <i class="fas fa-users md:mr-3 text-lg md:text-base"></i> <span class="hidden md:inline">Harem</span>
+            </button>
+            <button onclick="changeTab('mundo', this)" class="tab-btn flex-1 md:flex-none p-4 text-center md:text-left text-gray-500 font-black text-[10px] md:text-sm uppercase tracking-widest transition-all">
+                <i class="fas fa-map-marked-alt md:mr-3 text-lg md:text-base"></i> <span class="hidden md:inline">Mundo</span>
+            </button>
+            <button onclick="logout()" class="flex-1 md:flex-none p-4 text-center md:text-left text-red-500 font-black text-[10px] md:text-sm uppercase tracking-widest mt-0 md:mt-auto">
+                <i class="fas fa-power-off md:mr-3 text-lg md:text-base"></i> <span class="hidden md:inline">Salir</span>
+            </button>
         </nav>
 
-        <main class="flex-1 overflow-y-auto h-screen pb-20">
-            <header class="p-6 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-black/80 backdrop-blur">
-                <span id="user-display" class="font-black text-indigo-400 uppercase tracking-tighter text-xl"></span>
-                <span id="user-money" class="bg-green-600/20 text-green-400 px-4 py-2 rounded-full font-bold border border-green-500/20"></span>
+        <main class="flex-1 overflow-y-auto h-full pb-24 md:pb-0 order-1 md:order-2">
+            <header class="p-6 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-black/80 backdrop-blur z-40">
+                <div>
+                    <p class="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em]">Comandante</p>
+                    <h2 id="user-display" class="font-black text-xl italic leading-none">---</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-green-400 font-black uppercase tracking-[0.2em]">Créditos</p>
+                    <h2 id="user-money" class="text-xl font-black leading-none">---</h2>
+                </div>
             </header>
 
-            <section id="tab-harem" class="p-6">
-                <div id="harem-container" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+            <section id="tab-harem" class="p-4 md:p-8">
+                <div id="harem-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    </div>
             </section>
 
-            <section id="tab-mundo" class="hidden p-6 max-w-2xl mx-auto">
-                <div id="mundo-inactivo" class="bg-gray-900 p-8 rounded-3xl border border-gray-800 text-center">
-                    <h2 class="text-2xl font-black mb-4 uppercase italic">Exploración</h2>
-                    <div id="slots-equipo" class="flex justify-center gap-4 mb-8">
-                        <div class="w-20 h-20 border-2 border-dashed border-gray-700 rounded-2xl flex items-center justify-center text-gray-700">1</div>
-                        <div class="w-20 h-20 border-2 border-dashed border-gray-700 rounded-2xl flex items-center justify-center text-gray-700">2</div>
-                        <div class="w-20 h-20 border-2 border-dashed border-gray-700 rounded-2xl flex items-center justify-center text-gray-700">3</div>
+            <section id="tab-mundo" class="hidden p-6 max-w-2xl mx-auto h-full flex flex-col justify-center">
+                <div id="mundo-inactivo" class="bg-gray-900/40 p-10 rounded-[3rem] border border-gray-800 text-center shadow-2xl">
+                    <h2 class="text-3xl font-black mb-2 uppercase italic tracking-tighter">Exploración</h2>
+                    <p class="text-gray-500 text-xs mb-8 font-bold uppercase tracking-widest">Selecciona hasta 3 miembros en el Harem</p>
+                    
+                    <div id="slots-equipo" class="flex justify-center gap-4 mb-10">
+                        <div class="w-24 h-24 border-2 border-dashed border-gray-800 rounded-[2rem] flex items-center justify-center text-gray-800 text-xl font-black">1</div>
+                        <div class="w-24 h-24 border-2 border-dashed border-gray-800 rounded-[2rem] flex items-center justify-center text-gray-800 text-xl font-black">2</div>
+                        <div class="w-24 h-24 border-2 border-dashed border-gray-800 rounded-[2rem] flex items-center justify-center text-gray-800 text-xl font-black">3</div>
                     </div>
-                    <button id="btn-explorar" onclick="iniciarExploracion()" class="w-full bg-indigo-600 py-6 rounded-2xl font-black text-xl shadow-lg shadow-indigo-500/20">⚔️ ENVIAR EQUIPO</button>
+                    
+                    <button onclick="iniciarExploracion()" class="w-full bg-indigo-600 py-6 rounded-[2rem] font-black text-xl shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">
+                        LANZAR MISIÓN
+                    </button>
                 </div>
 
-                <div id="mundo-activo" class="hidden bg-gray-900 p-12 rounded-3xl border border-green-500/30 text-center">
-                    <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                    <h3 class="text-green-400 font-black text-2xl mb-2">MISIÓN EN CURSO</h3>
-                    <div id="timer-mision" class="text-5xl font-mono font-black">07:00</div>
+                <div id="mundo-activo" class="hidden bg-gray-900/40 p-12 rounded-[3rem] border border-indigo-500/30 text-center relative overflow-hidden">
+                    <div class="absolute inset-0 bg-indigo-500/5 animate-pulse"></div>
+                    <div class="relative z-10">
+                        <div class="w-20 h-20 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-8 shadow-lg shadow-indigo-500/20"></div>
+                        <h3 class="text-indigo-400 font-black text-2xl mb-2 uppercase italic">Operación en Curso</h3>
+                        <div id="timer-mision" class="text-6xl font-black tracking-tighter italic">07:00</div>
+                    </div>
                 </div>
             </section>
         </main>
+    </div>
+
+    <div id="modal-detalles" class="hidden fixed inset-0 z-[1100] glass flex items-center justify-center p-4">
+        <div class="bg-gray-900 w-full max-w-md rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl relative">
+            <button onclick="cerrarDetalles()" class="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl"><i class="fas fa-times"></i></button>
+            
+            <div class="p-8 flex flex-col items-center text-center">
+                <img id="det-img" src="" class="w-48 h-48 object-contain mb-6 drop-shadow-[0_0_25px_rgba(79,70,229,0.4)]">
+                
+                <p id="det-fuente" class="text-indigo-400 font-black text-[10px] uppercase tracking-[0.3em] mb-1">---</p>
+                <h2 id="det-nombre" class="text-3xl font-black uppercase italic mb-6">---</h2>
+
+                <div class="grid grid-cols-2 gap-3 w-full mb-8">
+                    <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[8px] text-gray-500 uppercase font-black">Nivel</p>
+                        <p id="det-nivel" class="font-bold text-yellow-500 tracking-widest">--</p>
+                    </div>
+                    <div class="bg-black/40 p-4 rounded-2xl border border-white/5">
+                        <p class="text-[8px] text-gray-500 uppercase font-black">Valor</p>
+                        <p id="det-valor" class="font-bold text-green-400 tracking-widest">--</p>
+                    </div>
+                    <div class="bg-black/40 p-4 rounded-2xl border border-white/5 col-span-2">
+                        <p class="text-[8px] text-gray-500 uppercase font-black">Género Detectado</p>
+                        <p id="det-genero" class="font-bold uppercase text-[10px] tracking-widest">--</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 w-full">
+                    <button onclick="entrenarPj()" class="w-full bg-white text-black py-4 rounded-2xl font-black uppercase text-xs hover:bg-indigo-500 hover:text-white transition-all">
+                        Entrenar (-$500)
+                    </button>
+                    <button id="btn-toggle-equipo" onclick="toggleEquipo()" class="w-full bg-indigo-600 py-4 rounded-2xl font-black uppercase text-xs shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
+                        Añadir al Equipo
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
