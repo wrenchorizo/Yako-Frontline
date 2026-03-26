@@ -53,9 +53,12 @@
     <span class="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Energía Mística</span>
     <span id="cargas-display" class="text-sm font-bold text-white">⚡ 3 / 3</span>
 </div>
-<button id="btn-invocar" class="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 font-black rounded-2xl shadow-xl hover:scale-[1.01] active:scale-95 transition-all mb-6 uppercase italic tracking-tighter">
-    🌀 Invocar Nuevo Personaje
-</button>
+<div class="mb-6">
+    <button id="btn-invocar" class="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 font-black rounded-2xl shadow-xl hover:scale-[1.01] active:scale-95 transition-all disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed uppercase italic tracking-tighter">
+        🌀 Invocar Nuevo Personaje
+    </button>
+    <p id="invocar-timer" class="text-[10px] text-center text-indigo-400 mt-2 uppercase tracking-widest font-bold">Disponible cada 60 minutos</p>
+</div>
                     <div class="relative">
                         <i class="fas fa-search absolute left-4 top-4 text-gray-500"></i>
                         <input type="text" id="buscador" placeholder="Filtrar por nombre..." class="w-full bg-gray-900 border border-gray-800 p-4 pl-12 rounded-2xl outline-none focus:border-indigo-500 text-sm">
