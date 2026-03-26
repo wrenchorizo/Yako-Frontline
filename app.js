@@ -1,4 +1,4 @@
-const API_URL = "yako-production.up.railway.app"; 
+const API_URL = "https://yako-production.up.railway.app"; 
 
 async function cargarHarem() {
     console.log("Intentando conectar con:", API_URL); // Esto nos ayuda a ver errores
