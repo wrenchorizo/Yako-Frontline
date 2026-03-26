@@ -16,6 +16,7 @@
     </style>
 </head>
 <body class="flex flex-col md:flex-row">
+    <div id="notificador" class="fixed top-20 right-4 z-[500] space-y-2 pointer-events-none"></div>
 
     <div id="auth-screen" class="fixed inset-0 bg-gray-950 z-[300] flex items-center justify-center p-6">
         <div class="bg-gray-900 p-8 rounded-3xl border border-indigo-500/50 max-w-sm w-full shadow-2xl">
@@ -68,28 +69,18 @@
             </section>
 
             <section id="tab-mundo" class="hidden p-6 max-w-4xl mx-auto">
-                <div class="bg-gradient-to-b from-gray-800 to-gray-950 rounded-3xl p-8 border border-indigo-500/30 text-center shadow-2xl">
-                    <div class="mb-8">
-                        <i class="fas fa-map-marked-alt text-6xl text-indigo-500 mb-4 animate-pulse"></i>
-                        <h2 class="text-3xl font-black italic uppercase">Exploración</h2>
-                        <p class="text-gray-400 text-sm mt-2">Envía a tus personajes a buscar botín.</p>
-                    </div>
-
-                    <div id="pantalla-espera" class="hidden py-10">
-                        <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <p class="text-indigo-400 font-bold uppercase tracking-widest">Explorando el Multiverso...</p>
-                    </div>
-
-                    <div id="controles-mundo">
-                        <button id="btn-explorar" onclick="iniciarExploracion()" class="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-xl shadow-lg transition-all active:scale-95 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed">
-                            ⚔️ INICIAR EXPEDICIÓN
-                        </button>
-                        <p id="cooldown-timer" class="text-[10px] text-indigo-400 mt-4 uppercase tracking-[0.2em] font-bold italic">¡Listo para la aventura!</p>
-                    </div>
-                </div>
-
-                <div id="resultado-mundo" class="mt-6 space-y-4 h-[300px] overflow-y-auto pr-2">
-                    </div>
+    <div class="bg-gray-900 p-6 rounded-3xl border border-indigo-500/30 mb-6">
+        <h3 class="text-center font-black italic mb-4 uppercase">Selecciona tu Equipo (Max 3)</h3>
+        <div id="seleccion-equipo" class="flex justify-center gap-4 min-h-[100px] mb-6">
+            </div>
+        
+        <div id="controles-mundo">
+            <button id="btn-explorar" onclick="iniciarExploracion()" class="w-full py-6 bg-indigo-600 font-black rounded-2xl text-xl shadow-lg disabled:bg-gray-800">
+                ⚔️ ENVIAR EXPEDICIÓN
+            </button>
+            <p id="cooldown-timer" class="text-[10px] text-center mt-4 text-indigo-400 font-bold italic">7 MINUTOS DE RECARGA</p>
+        </div>
+    </div>
             </section>
 
             <section id="tab-social" class="hidden p-20 text-center italic">
