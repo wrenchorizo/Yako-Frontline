@@ -23,11 +23,14 @@ function toggleSidebar() {
     const side = document.getElementById('sidebar');
     const texts = document.querySelectorAll('.nav-text');
     
-    // Si estamos en móvil, usamos traslación. Si no, usamos expansión.
     if (window.innerWidth < 768) {
+        // En celular: desliza
         side.classList.toggle('-translate-x-full');
         side.classList.toggle('translate-x-0');
+        // Forzamos que los textos se vean en celular
+        texts.forEach(t => t.classList.remove('hidden'));
     } else {
+        // En PC: expande
         side.classList.toggle('expanded');
         texts.forEach(t => t.classList.toggle('hidden'));
     }
