@@ -326,25 +326,22 @@ function abrirAccionesUsuario(id, nombre, relacion) {
     let botonesHTML = "";
 
     if (relacion === 'amigo') {
-        // SI YA SON AMIGOS
         botonesHTML = `
+            <button onclick="setChatTarget('${nombre}')" class="bg-indigo-500 py-3 rounded-xl font-black hud-text-xs uppercase italic">Enviar Mensaje</button>
             <button onclick="abrirMenuDuelo()" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Retar a Duelo</button>
-            <button onclick="abrirTrade()" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Tradeo</button>
+            <button onclick="enviarSol('trade')" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Tradeo</button>
             <button onclick="regalarPj()" class="bg-yellow-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Regalar PJ</button>
             <button onclick="eliminarAmigo('${id}')" class="bg-gray-700 py-3 rounded-xl font-black hud-text-xs uppercase text-red-400">Eliminar Amigo</button>
         `;
     } else {
-        // SI NO SON AMIGOS
         botonesHTML = `
             <button onclick="enviarSol('amistad')" class="bg-indigo-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Añadir Amigo</button>
-            <button onclick="notificar('Debes ser su amigo para retarlo', 'error')" class="bg-gray-800 py-3 rounded-xl font-black hud-text-xs uppercase opacity-50">Retar (Bloqueado)</button>
         `;
     }
 
     container.innerHTML = botonesHTML + `
         <div class="flex gap-2 mt-4">
             <button onclick="bloquear()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Bloquear</button>
-            <button onclick="reportar()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Reportar</button>
         </div>
     `;
     document.getElementById('modal-user-acciones').classList.remove('hidden');
@@ -365,12 +362,20 @@ async function eliminarAmigo(exAmigoId) {
     
 
 async function enviarSol(tipo) {
-    await fetch(`${API_URL}/solicitud/enviar`, {
+    const res = await fetch(`${API_URL}/solicitud/enviar`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ emisorId: usuario.id, emisorName: usuario.username, receptorId: userEnMira.id, tipo })
+        body: JSON.stringify({ 
+            emisorId: usuario.id, 
+            emisorName: usuario.username, 
+            receptorId: userEnMira.id, 
+            tipo 
+        })
     });
-    notificar(`Solicitud de ${tipo} enviada`);
+    const data = await res.json();
+    if(data.error) return notificar(data.error, "error");
+    
+    notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
     cerrarAcciones();
 }
 
@@ -531,8 +536,7 @@ function abrirTrade() {
 
 // Regalar Personaje
 async function regalarPj() {
-    // Primero necesitamos elegir qué PJ regalar (podrías usar un pequeño prompt por ahora)
-    const nombrePj = prompt("Escribe el nombre exacto del personaje que quieres regalar:");
+    const nombrePj = prompt("Escribe el nombre del personaje a regalar:");
     if(!nombrePj) return;
 
     const res = await fetch(`${API_URL}/regalar-personaje`, {
@@ -548,7 +552,64 @@ async function regalarPj() {
     const data = await res.json();
     if(data.error) return notificar(data.error, "error");
     
-    notificar(`¡Has enviado a ${nombrePj} a ${userEnMira.nombre}!`);
-    cargarDatos(); // Para refrescar tu harem
+    notificar(`¡Regalo enviado!`);
     cerrarAcciones();
+    await cargarDatos(); // Esto actualiza el harem visualmente de inmediato
+}
+
+// --- 1. MOSTRAR DETALLES DEL PERSONAJE ---
+// Esta función se activa al hacer clic en cualquier carta del Harem
+function abrirDetalles(pj) {
+    pjSeleccionado = pj;
+    document.getElementById('det-img').src = pj.imagen;
+    document.getElementById('det-nombre').innerText = pj.nombre;
+    document.getElementById('det-fuente').innerText = pj.fuente;
+    document.getElementById('det-nivel').innerText = pj.nivel;
+    
+    // GÉNERO: Ahora lee "Mujer", "Hombre" o "Desconocido" del JSON
+    const gen = pj.genero || "Desconocido";
+    document.getElementById('det-genero').innerText = gen.toUpperCase();
+    
+    document.getElementById('det-stamina-bar').style.width = `${pj.stamina}%`;
+    document.getElementById('det-stamina-text').innerText = `${pj.stamina}%`;
+    
+    // Cambia el texto del botón según si ya está en tu equipo de 3
+    const estaEnEquipo = equipo.find(p => p._id === pj._id);
+    document.getElementById('btn-toggle-equipo').innerText = estaEnEquipo ? "QUITAR DEL EQUIPO" : "AÑADIR AL EQUIPO";
+    
+    document.getElementById('modal-detalles').classList.remove('hidden');
+}
+
+// --- 2. LÓGICA DE SOLICITUDES (Duelo, Trade, Amistad) ---
+// Esta función centraliza la aceptación de cualquier interacción
+async function aceptarSol(solId, tipo) {
+    let ruta = 'aceptar-amistad'; 
+    if(tipo === 'duelo') ruta = 'aceptar-duelo';
+    if(tipo === 'trade') ruta = 'aceptar-trade';
+
+    try {
+        const res = await fetch(`${API_URL}/solicitud/${ruta}/${solId}`, { method: 'POST' });
+        const data = await res.json();
+        
+        // Eliminamos el cartelito de la pantalla
+        document.getElementById(`sol-${solId}`)?.remove();
+        notificar(`¡${tipo.toUpperCase()} ACEPTADO!`);
+        
+        // Si es un duelo, disparamos la pelea automáticamente
+        if(tipo === 'duelo') ejecutarDuelo(data.oponenteId);
+        
+        await cargarDatos(); // Refrescamos la pantalla para ver cambios
+    } catch (e) {
+        notificar("Error al procesar solicitud", "error");
+    }
+}
+
+// --- 3. CHAT PRIVADO ---
+// Cambia el objetivo del chat (Global o un Amigo específico)
+function setChatTarget(target) {
+    chatTarget = target;
+    document.getElementById('chat-target-label').innerText = target === 'global' ? "Chat Global" : `Chat con ${target}`;
+    switchSocial('chat'); // Nos lleva a la pestaña de mensajes
+    cerrarAcciones();    // Cierra el menú de botones (Duelo, Trade, etc.)
+    cargarChat();        // Carga los mensajes de ese amigo
 }
