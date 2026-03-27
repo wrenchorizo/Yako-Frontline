@@ -604,12 +604,103 @@ async function aceptarSol(solId, tipo) {
     }
 }
 
-// --- 3. CHAT PRIVADO ---
-// Cambia el objetivo del chat (Global o un Amigo específico)
+// --- SISTEMA DE NOTIFICACIONES DE SOLICITUDES (Duelo/Amistad/Trade) ---
+async function revisarSolicitudes() {
+    if (!usuario) return;
+    try {
+        const res = await fetch(`${API_URL}/solicitudes/pendientes/${usuario.id}`);
+        const solicitudes = await res.json();
+
+        solicitudes.forEach(sol => {
+            // Solo mostrar si no existe ya el cartelito en pantalla
+            if (!document.getElementById(`sol-${sol._id}`)) {
+                mostrarPopUpSolicitud(sol);
+            }
+        });
+    } catch (e) { console.error("Error al revisar solicitudes", e); }
+}
+
+function mostrarPopUpSolicitud(sol) {
+    const box = document.createElement('div');
+    box.id = `sol-${sol._id}`;
+    box.className = "fixed bottom-24 left-4 right-4 bg-indigo-950 border-2 border-indigo-500 p-5 rounded-[2rem] z-[9000] animate-bounce-in shadow-2xl";
+    
+    let icono = sol.tipo === 'duelo' ? 'fa-swords text-red-500' : 'fa-user-plus text-indigo-400';
+    let accionNom = sol.tipo === 'duelo' ? 'te reta a un DUELO' : 'quiere ser tu amigo';
+
+    box.innerHTML = `
+        <p class="text-white hud-text-xs mb-4 uppercase font-black tracking-tight">
+            <i class="fas ${icono} mr-2"></i><b>${sol.emisorName}</b> ${accionNom}
+        </p>
+        <div class="flex gap-2">
+            <button onclick="aceptarSol('${sol._id}', '${sol.tipo}')" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-black text-[10px] text-white shadow-lg">ACEPTAR</button>
+            <button onclick="rechazarSol('${sol._id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-black text-[10px] text-gray-400">RECHAZAR</button>
+        </div>
+    `;
+    document.body.appendChild(box);
+}
+
+// Ejecutar cada 5 segundos
+setInterval(revisarSolicitudes, 5000);
+
+// --- FUNCIÓN ÚNICA PARA ACEPTAR ---
+async function aceptarSol(solId, tipo) {
+    let ruta = 'aceptar-amistad'; 
+    if(tipo === 'duelo') ruta = 'aceptar-duelo';
+    if(tipo === 'trade') ruta = 'aceptar-trade';
+
+    try {
+        const res = await fetch(`${API_URL}/solicitud/${ruta}/${solId}`, { method: 'POST' });
+        const data = await res.json();
+        
+        document.getElementById(`sol-${solId}`)?.remove();
+        notificar(`¡${tipo.toUpperCase()} ACEPTADO!`);
+        
+        if(tipo === 'duelo') ejecutarDuelo(data.oponenteId);
+        
+        await cargarDatos(); // Recarga amigos y harem
+    } catch (e) {
+        notificar("Error al procesar", "error");
+    }
+}
+
+async function rechazarSol(solId) {
+    // Solo lo quitamos de la vista (el servidor las limpia luego o puedes añadir ruta de delete)
+    document.getElementById(`sol-${solId}`)?.remove();
+}
+
+// --- ACCIONES DE USUARIO ---
+function abrirMenuDuelo() {
+    enviarSol('duelo');
+    cerrarAcciones();
+}
+
+async function regalarPj() {
+    const nombrePj = prompt("Escribe el nombre del personaje a regalar:");
+    if(!nombrePj || !userEnMira) return;
+
+    const res = await fetch(`${API_URL}/regalar-personaje`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            emisorId: usuario.id, 
+            receptorId: userEnMira.id, 
+            nombrePj: nombrePj.trim() 
+        })
+    });
+
+    const data = await res.json();
+    if(data.error) return notificar(data.error, "error");
+    
+    notificar(`¡Regalo enviado con éxito!`);
+    cerrarAcciones();
+    await cargarDatos(); 
+}
+
 function setChatTarget(target) {
     chatTarget = target;
     document.getElementById('chat-target-label').innerText = target === 'global' ? "Chat Global" : `Chat con ${target}`;
-    switchSocial('chat'); // Nos lleva a la pestaña de mensajes
-    cerrarAcciones();    // Cierra el menú de botones (Duelo, Trade, etc.)
-    cargarChat();        // Carga los mensajes de ese amigo
+    switchSocial('chat');
+    cerrarAcciones();
+    cargarChat();
 }
