@@ -276,6 +276,7 @@ function verPestanaSocial(tab) {
     document.getElementById('btn-soc-buscar').className = tab === 'buscar' ? 'flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black' : 'flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black';
 }
 
+// Modificamos el buscador para recibir la relación
 async function buscarUsuarios() {
     const q = document.getElementById('inp-search').value;
     if(q.length < 2) return;
@@ -283,24 +284,38 @@ async function buscarUsuarios() {
     const data = await res.json();
     
     document.getElementById('res-busqueda').innerHTML = data.map(u => `
-        <div onclick="abrirAccionesUsuario('${u._id}', '${u.username}')" class="bg-black/40 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer hover:bg-indigo-900/20">
+        <div onclick="abrirAccionesUsuario('${u._id}', '${u.username}', '${u.relacion}')" class="bg-black/40 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer hover:bg-indigo-900/20">
             <span class="font-black hud-text-sm uppercase italic">${u.username}</span>
-            <i class="fas fa-chevron-right text-gray-700"></i>
+            <span class="text-[9px] font-bold ${u.relacion === 'amigo' ? 'text-green-500' : 'text-gray-500'}">${u.relacion === 'amigo' ? 'AMIGO' : ''}</span>
         </div>
     `).join('');
 }
 
-function abrirAccionesUsuario(id, nombre) {
+// El modal ahora decide qué botones mostrar
+function abrirAccionesUsuario(id, nombre, relacion) {
     userEnMira = { id, nombre };
     document.getElementById('acc-nombre').innerText = nombre;
     const container = document.getElementById('contenedor-botones-acciones');
     
-    // Aquí generamos los botones que pediste
-    container.innerHTML = `
-        <button onclick="enviarSol('amistad')" class="bg-indigo-600 py-3 rounded-xl font-black hud-text-xs uppercase">Añadir Amigo</button>
-        <button onclick="abrirMenuDuelo()" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs uppercase">Retar a Duelo</button>
-        <button onclick="abrirTrade()" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase">Trade</button>
-        <button onclick="regalarPj()" class="bg-yellow-600 py-3 rounded-xl font-black hud-text-xs uppercase">Regalar Personaje</button>
+    let botonesHTML = "";
+
+    if (relacion === 'amigo') {
+        // SI YA SON AMIGOS
+        botonesHTML = `
+            <button onclick="abrirMenuDuelo()" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Retar a Duelo</button>
+            <button onclick="abrirTrade()" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Tradeo</button>
+            <button onclick="regalarPj()" class="bg-yellow-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Regalar PJ</button>
+            <button onclick="eliminarAmigo('${id}')" class="bg-gray-700 py-3 rounded-xl font-black hud-text-xs uppercase text-red-400">Eliminar Amigo</button>
+        `;
+    } else {
+        // SI NO SON AMIGOS
+        botonesHTML = `
+            <button onclick="enviarSol('amistad')" class="bg-indigo-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Añadir Amigo</button>
+            <button onclick="notificar('Debes ser su amigo para retarlo', 'error')" class="bg-gray-800 py-3 rounded-xl font-black hud-text-xs uppercase opacity-50">Retar (Bloqueado)</button>
+        `;
+    }
+
+    container.innerHTML = botonesHTML + `
         <div class="flex gap-2 mt-4">
             <button onclick="bloquear()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Bloquear</button>
             <button onclick="reportar()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Reportar</button>
@@ -308,6 +323,20 @@ function abrirAccionesUsuario(id, nombre) {
     `;
     document.getElementById('modal-user-acciones').classList.remove('hidden');
 }
+
+async function eliminarAmigo(exAmigoId) {
+    if(!confirm("¿Eliminar de tu lista de amigos?")) return;
+    await fetch(`${API_URL}/solicitud/eliminar-amistad`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ miId: usuario.id, exAmigoId })
+    });
+    notificar("Amistad eliminada");
+    cerrarAcciones();
+    cargarDatos();
+    buscarUsuarios(); // Refrescar lista
+}
+    
 
 async function enviarSol(tipo) {
     await fetch(`${API_URL}/solicitud/enviar`, {
@@ -362,6 +391,35 @@ async function ejecutarDuelo(oponenteId) {
     const data = await res.json();
     if(data.error) return notificar(data.error, "error");
     notificar(`¡${data.victoria ? 'GANASTE' : 'PERDISTE'}! ${data.detalle}`, data.victoria ? 'info' : 'error');
+    async function cargarDatos() {
+    if(!usuario) return;
+    try {
+        const res = await fetch(`${API_URL}/perfil/${usuario.id}`);
+        const data = await res.json();
+        
+        // ... (todo lo que ya tenías de balance y equipo) ...
+
+        // ACTUALIZAR LISTA DE AMIGOS EN PESTAÑA SOCIAL
+        const listaAmigos = document.getElementById('vista-amigos');
+        if (data.amigos && data.amigos.length > 0) {
+            listaAmigos.innerHTML = data.amigos.map(amigo => `
+                <div class="bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center" 
+                     onclick="abrirAccionesUsuario('${amigo._id}', '${amigo.username}', 'amigo')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center font-black text-xs text-white">
+                            ${amigo.username[0].toUpperCase()}
+                        </div>
+                        <span class="font-black hud-text-sm uppercase">${amigo.username}</span>
+                    </div>
+                    <i class="fas fa-comment-dots text-indigo-400"></i>
+                </div>
+            `).join('');
+        } else {
+            listaAmigos.innerHTML = `<p class="text-center text-gray-600 hud-text-xs mt-10 uppercase">No tienes amigos aún</p>`;
+        }
+
+    } catch (e) { console.error(e); }
+}
     cargarDatos();
 }
 // --- SISTEMA DE NOTIFICACIONES EN TIEMPO REAL ---
@@ -411,9 +469,16 @@ setInterval(revisarSolicitudes, 5000);
 
 async function aceptarAmistad(solId) {
     await fetch(`${API_URL}/solicitud/aceptar-amistad/${solId}`, { method: 'POST' });
-    document.getElementById(`sol-${solId}`).remove();
+    const modalSol = document.getElementById(`sol-${solId}`);
+    if(modalSol) modalSol.remove();
+    
     notificar("¡Ahora son amigos!");
-    cargarDatos(); // Para refrescar tu lista de amigos
+    
+    // Refrescar todo
+    await cargarDatos(); 
+    if(document.getElementById('inp-search').value.length >= 2) {
+        buscarUsuarios(); 
+    }
 }
 
 async function rechazarSol(solId) {
