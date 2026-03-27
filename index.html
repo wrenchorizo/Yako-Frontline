@@ -71,10 +71,13 @@
 
     <div id="game-screen" class="hidden flex flex-col md:flex-row w-full h-full">
         
-        <nav id="sidebar" class="sidebar bg-gray-900/90 backdrop-blur-xl border-r border-gray-800 flex flex-col p-3 z-[100] transition-all">
-            <button onclick="toggleSidebar()" class="w-full p-3 mb-6 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
+        <nav id="sidebar" class="sidebar fixed left-0 top-0 h-screen bg-gray-900/90 backdrop-blur-xl border-r border-gray-800 flex flex-col p-3 z-[100] transition-all overflow-y-auto">
+    
+    <button onclick="toggleSidebar()" class="w-full p-3 mb-6 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+
+        </nav>
             
             <div class="flex flex-col gap-3 flex-1">
                 <button onclick="changeTab('harem', this)" class="tab-btn p-3 flex items-center gap-4 active-tab text-white transition-all">
