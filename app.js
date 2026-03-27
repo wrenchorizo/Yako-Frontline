@@ -235,26 +235,33 @@ function iniciarTimerMision(fin) {
 }
 
 // --- INVOCACIÓN (TIMER MM:SS) ---
-function iniciarTimerInvocacion(fecha) {
-    if(invTimerInterval) clearInterval(invTimerInterval);
-    const btn = document.getElementById('btn-invocar');
-    const label = document.getElementById('invocar-timer');
-    
-    invTimerInterval = setInterval(() => {
-        const diff = new Date(fecha).getTime() + 1200000 - Date.now();
+function iniciarTimerMision(fin) {
+    if(window.misionInterval) clearInterval(window.misionInterval); // Evita duplicados
+
+    window.misionInterval = setInterval(async () => {
+        const ahora = Date.now();
+        const final = new Date(fin).getTime();
+        const diff = final - ahora;
+
         if(diff <= 0) {
-            clearInterval(invTimerInterval);
-            btn.disabled = false; btn.innerText = "INVOCAR";
-            label.classList.add('hidden');
+            clearInterval(window.misionInterval);
+            document.getElementById('timer-mision').innerText = "00:00";
+            
+            const res = await fetch(`${API_URL}/mision/reclamar/${usuario.id}`, { method: 'POST' });
+            const data = await res.json();
+            
+            if(data.fueVencido) notificar("¡DERROTADOS!", "error");
+            else notificar(`¡Éxito! +$${data.ganancia}`);
+            
+            cargarDatos();
         } else {
-            btn.disabled = true;
-            label.classList.remove('hidden');
-            const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
-            btn.innerText = "RECARGANDO...";
-            label.innerText = `DISPONIBLE EN ${m}:${s < 10 ? '0'+s : s}`;
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('timer-mision').innerText = `${m}:${s < 10 ? '0'+s : s}`;
         }
     }, 1000);
 }
+
 
 async function intentarInvocacion() {
     const res = await fetch(`${API_URL}/invocar`, {
@@ -362,22 +369,36 @@ async function eliminarAmigo(exAmigoId) {
     
 
 async function enviarSol(tipo) {
-    const res = await fetch(`${API_URL}/solicitud/enviar`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            emisorId: usuario.id, 
-            emisorName: usuario.username, 
-            receptorId: userEnMira.id, 
-            tipo 
-        })
-    });
+    if(!userEnMira) return;
+
+    try {
+        const res = await fetch(`${API_URL}/solicitud/enviar`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                emisorId: usuario.id, 
+                emisorName: usuario.username, 
+                receptorId: userEnMira.id, 
+                tipo: tipo // Aquí 'duelo', 'trade' o 'amistad'
+            })
+        });
+        const data = await res.json();
+        
+        if(data.error) {
+            // Si el error es "ya son amigos", pero el tipo es duelo, el servidor debería dejar.
+            // Asegúrate de que el backend no bloquee duelos entre amigos.
+            return notificar(data.error, "error");
+        }
+        
+        notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
+        cerrarAcciones();
+    } catch (e) {
+        notificar("Error al conectar con el servidor", "error");
+    }
+}
+
     const data = await res.json();
     if(data.error) return notificar(data.error, "error");
-    
-    notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
-    cerrarAcciones();
-}
 
 function cerrarAcciones() {
     document.getElementById('modal-user-acciones').classList.add('hidden');
