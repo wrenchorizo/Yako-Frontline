@@ -39,8 +39,14 @@ function changeTab(tab, btn) {
 
 // --- AUTENTICACIÓN ---
 async function handleAuth(type) {
-    const user = document.getElementById('auth-user').value;
-    const pass = document.getElementById('auth-pass').value;
+    const userEl = document.getElementById('auth-user');
+    const passEl = document.getElementById('auth-pass');
+    
+    if(!userEl || !passEl) return notificar(" Error de interfaz", "error");
+
+    const user = userEl.value.trim();
+    const pass = passEl.value.trim();
+
     if(!user || !pass) return notificar("Campos vacíos", "error");
 
     try {
@@ -49,17 +55,25 @@ async function handleAuth(type) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ username: user, password: pass })
         });
+        
         const data = await res.json();
-        if(data.error) throw new Error(data.error);
+        
+        if(data.error) {
+            notificar(data.error, "error");
+            return;
+        }
 
         if(type === 'login') {
             usuario = data;
             localStorage.setItem('yak_user', JSON.stringify(data));
             location.reload();
         } else {
-            notificar("¡Cuenta creada! Inicia sesión.");
+            notificar("¡Cuenta creada! Ya puedes iniciar sesión.");
         }
-    } catch (e) { notificar("Error de conexión", "error"); }
+    } catch (e) { 
+        console.error("Error en Auth:", e);
+        notificar("No se pudo conectar con el servidor", "error"); 
+    }
 }
 
 function confirmarLogout() { document.getElementById('modal-logout').classList.remove('hidden'); }
@@ -247,24 +261,34 @@ function iniciarTimerMision(fin) {
 
 
 async function intentarInvocacion() {
-    const res = await fetch(`${API_URL}/invocar`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ userId: usuario.id })
-    });
+    try {
+        const res = await fetch(`${API_URL}/invocar`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ userId: usuario.id })
+        });
+        
+        const data = await res.json();
+        
+        if(data.error) return notificar(data.error, "error");
 
-    document.getElementById('inv-img').src = data.imagen;
-    document.getElementById('inv-nombre').innerText = data.nombre;
-    document.getElementById('inv-fuente').innerText = data.fuente;
-    const disp = document.getElementById('inv-disponibilidad');
-    disp.innerText = data.estado;
-    disp.className = data.disponible ? "p-3 rounded-xl border border-green-500/30 text-green-400 font-black" : "p-3 rounded-xl border border-red-500/30 text-red-400 font-black";
-    
-    document.getElementById('modal-invocacion').classList.remove('hidden');
-    cargarDatos();
+        document.getElementById('inv-img').src = data.imagen;
+        document.getElementById('inv-nombre').innerText = data.nombre;
+        document.getElementById('inv-fuente').innerText = data.fuente;
+        
+        const disp = document.getElementById('inv-disponibilidad');
+        disp.innerText = data.estado;
+        disp.className = data.disponible ? 
+            "p-3 rounded-xl border border-green-500/30 text-green-400 font-black" : 
+            "p-3 rounded-xl border border-red-500/30 text-red-400 font-black";
+        
+        document.getElementById('modal-invocacion').classList.remove('hidden');
+        cargarDatos();
+    } catch (e) {
+        console.error("Error invocando:", e);
+        notificar("Error al invocar", "error");
+    }
 }
-
-function cerrarInvocacion() { document.getElementById('modal-invocacion').classList.add('hidden'); }
 
 // INICIO
 if(usuario) {
@@ -348,6 +372,7 @@ async function eliminarAmigo(exAmigoId) {
     buscarUsuarios(); // Refrescar lista
 }
     
+// --- ACCIONES DE USUARIO Y CIERRES ---
 
 async function enviarSol(tipo) {
     if(!userEnMira) return;
@@ -360,16 +385,12 @@ async function enviarSol(tipo) {
                 emisorId: usuario.id, 
                 emisorName: usuario.username, 
                 receptorId: userEnMira.id, 
-                tipo: tipo // Aquí 'duelo', 'trade' o 'amistad'
+                tipo: tipo 
             })
         });
         const data = await res.json();
         
-        if(data.error) {
-            // Si el error es "ya son amigos", pero el tipo es duelo, el servidor debería dejar.
-            // Asegúrate de que el backend no bloquee duelos entre amigos.
-            return notificar(data.error, "error");
-        }
+        if(data.error) return notificar(data.error, "error");
         
         notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
         cerrarAcciones();
@@ -378,12 +399,16 @@ async function enviarSol(tipo) {
     }
 }
 
-    const data = await res.json();
-    if(data.error) return notificar(data.error, "error");
-
 function cerrarAcciones() {
-    document.getElementById('modal-user-acciones').classList.add('hidden');
+    const modal = document.getElementById('modal-user-acciones');
+    if(modal) modal.classList.add('hidden');
 }
+
+// Inicialización de intervalos
+if (usuario) {
+    setInterval(revisarSolicitudes, 5000);
+}
+
 
 function setChatTarget(target) {
     chatTarget = target;
@@ -391,6 +416,7 @@ function setChatTarget(target) {
     switchSocial('chat');
     cargarChat();
 }
+
 
 async function enviarMensaje() {
     const input = document.getElementById('chat-input');
