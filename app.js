@@ -413,6 +413,7 @@ async function cargarChat() {
     `).reverse().join('');
 }
 
+// --- COMBATE ---
 async function ejecutarDuelo(oponenteId) {
     const res = await fetch(`${API_URL}/duelo`, {
         method: 'POST',
@@ -421,190 +422,12 @@ async function ejecutarDuelo(oponenteId) {
     });
     const data = await res.json();
     if(data.error) return notificar(data.error, "error");
+    
     notificar(`¡${data.victoria ? 'GANASTE' : 'PERDISTE'}! ${data.detalle}`, data.victoria ? 'info' : 'error');
-    async function cargarDatos() {
-    if(!usuario) return;
-    try {
-        const res = await fetch(`${API_URL}/perfil/${usuario.id}`);
-        const data = await res.json();
-        
-        // ... (todo lo que ya tenías de balance y equipo) ...
-
-        // ACTUALIZAR LISTA DE AMIGOS EN PESTAÑA SOCIAL
-        const listaAmigos = document.getElementById('vista-amigos');
-        if (data.amigos && data.amigos.length > 0) {
-            listaAmigos.innerHTML = data.amigos.map(amigo => `
-                <div class="bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center" 
-                     onclick="abrirAccionesUsuario('${amigo._id}', '${amigo.username}', 'amigo')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center font-black text-xs text-white">
-                            ${amigo.username[0].toUpperCase()}
-                        </div>
-                        <span class="font-black hud-text-sm uppercase">${amigo.username}</span>
-                    </div>
-                    <i class="fas fa-comment-dots text-indigo-400"></i>
-                </div>
-            `).join('');
-        } else {
-            listaAmigos.innerHTML = `<p class="text-center text-gray-600 hud-text-xs mt-10 uppercase">No tienes amigos aún</p>`;
-        }
-
-    } catch (e) { console.error(e); }
-}
-    cargarDatos();
-}
-// --- SISTEMA DE NOTIFICACIONES EN TIEMPO REAL ---
-async function revisarSolicitudes() {
-    if (!usuario) return;
-    
-    const res = await fetch(`${API_URL}/solicitudes/pendientes/${usuario.id}`);
-    const solicitudes = await res.json();
-
-    solicitudes.forEach(sol => {
-        // Si encontramos una solicitud que no hemos mostrado
-        if (!document.getElementById(`sol-${sol._id}`)) {
-            mostrarPopUpSolicitud(sol);
-        }
-    });
+    await cargarDatos(); // Refresca balance y stats tras la pelea
 }
 
-function mostrarPopUpSolicitud(sol) {
-    const box = document.createElement('div');
-    box.id = `sol-${sol._id}`;
-    box.className = "fixed bottom-24 left-4 right-4 bg-indigo-950 border-2 border-indigo-500 p-5 rounded-[2rem] z-[9000] animate-bounce-in shadow-2xl";
-    
-    let texto = "";
-    let accionAceptar = "";
-
-    // CORRECCIÓN: Usar sol.tipo en lugar de tipo
-    if (sol.tipo === 'amistad') {
-        texto = `<i class="fas fa-user-plus mr-2 text-indigo-400"></i><b>${sol.emisorName}</b> quiere ser tu amigo`;
-        accionAceptar = `aceptarAmistad('${sol._id}')`;
-    } else if (sol.tipo === 'duelo') {
-        texto = `<i class="fas fa-swords mr-2 text-red-500"></i><b>${sol.emisorName}</b> te reta a un DUELO`;
-        accionAceptar = `aceptarDuelo('${sol._id}')`;
-    }
-
-    box.innerHTML = `
-        <p class="text-white hud-text-xs mb-4 uppercase font-black tracking-tight">${texto}</p>
-        <div class="flex gap-2">
-            <button onclick="${accionAceptar}" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-black text-[10px] text-white shadow-lg">ACEPTAR</button>
-            <button onclick="rechazarSol('${sol._id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-black text-[10px] text-gray-400">RECHAZAR</button>
-        </div>
-    `;
-    document.body.appendChild(box);
-}
-
-// Ejecutar cada 5 segundos
-setInterval(revisarSolicitudes, 5000);
-
-async function aceptarAmistad(solId) {
-    await fetch(`${API_URL}/solicitud/aceptar-amistad/${solId}`, { method: 'POST' });
-    const modalSol = document.getElementById(`sol-${solId}`);
-    if(modalSol) modalSol.remove();
-    
-    notificar("¡Ahora son amigos!");
-    
-    // Refrescar todo
-    await cargarDatos(); 
-    if(document.getElementById('inp-search').value.length >= 2) {
-        buscarUsuarios(); 
-    }
-}
-
-async function rechazarSol(solId) {
-    // Aquí podrías hacer un fetch para borrarla, por ahora solo la quitamos de la vista
-    document.getElementById(`sol-${solId}`).remove();
-}
-
-// Retar a Duelo
-function abrirMenuDuelo() {
-    if(!userEnMira) return;
-    enviarSol('duelo');
-    notificar(`Reto de duelo enviado a ${userEnMira.nombre}`);
-    cerrarAcciones();
-}
-
-// Abrir Tradeo
-function abrirTrade() {
-    if(!userEnMira) return;
-    // Aquí puedes redirigir a un modal de tradeo o simplemente enviar la sol
-    enviarSol('trade');
-    notificar(`Solicitud de intercambio enviada`);
-    cerrarAcciones();
-}
-
-// Regalar Personaje
-async function regalarPj() {
-    const nombrePj = prompt("Escribe el nombre del personaje a regalar:");
-    if(!nombrePj) return;
-
-    const res = await fetch(`${API_URL}/regalar-personaje`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            emisorId: usuario.id, 
-            receptorId: userEnMira.id, 
-            nombrePj: nombrePj.trim() 
-        })
-    });
-
-    const data = await res.json();
-    if(data.error) return notificar(data.error, "error");
-    
-    notificar(`¡Regalo enviado!`);
-    cerrarAcciones();
-    await cargarDatos(); // Esto actualiza el harem visualmente de inmediato
-}
-
-// --- 1. MOSTRAR DETALLES DEL PERSONAJE ---
-// Esta función se activa al hacer clic en cualquier carta del Harem
-function abrirDetalles(pj) {
-    pjSeleccionado = pj;
-    document.getElementById('det-img').src = pj.imagen;
-    document.getElementById('det-nombre').innerText = pj.nombre;
-    document.getElementById('det-fuente').innerText = pj.fuente;
-    document.getElementById('det-nivel').innerText = pj.nivel;
-    
-    // GÉNERO: Ahora lee "Mujer", "Hombre" o "Desconocido" del JSON
-    const gen = pj.genero || "Desconocido";
-    document.getElementById('det-genero').innerText = gen.toUpperCase();
-    
-    document.getElementById('det-stamina-bar').style.width = `${pj.stamina}%`;
-    document.getElementById('det-stamina-text').innerText = `${pj.stamina}%`;
-    
-    // Cambia el texto del botón según si ya está en tu equipo de 3
-    const estaEnEquipo = equipo.find(p => p._id === pj._id);
-    document.getElementById('btn-toggle-equipo').innerText = estaEnEquipo ? "QUITAR DEL EQUIPO" : "AÑADIR AL EQUIPO";
-    
-    document.getElementById('modal-detalles').classList.remove('hidden');
-}
-
-// --- 2. LÓGICA DE SOLICITUDES (Duelo, Trade, Amistad) ---
-// Esta función centraliza la aceptación de cualquier interacción
-async function aceptarSol(solId, tipo) {
-    let ruta = 'aceptar-amistad'; 
-    if(tipo === 'duelo') ruta = 'aceptar-duelo';
-    if(tipo === 'trade') ruta = 'aceptar-trade';
-
-    try {
-        const res = await fetch(`${API_URL}/solicitud/${ruta}/${solId}`, { method: 'POST' });
-        const data = await res.json();
-        
-        // Eliminamos el cartelito de la pantalla
-        document.getElementById(`sol-${solId}`)?.remove();
-        notificar(`¡${tipo.toUpperCase()} ACEPTADO!`);
-        
-        // Si es un duelo, disparamos la pelea automáticamente
-        if(tipo === 'duelo') ejecutarDuelo(data.oponenteId);
-        
-        await cargarDatos(); // Refrescamos la pantalla para ver cambios
-    } catch (e) {
-        notificar("Error al procesar solicitud", "error");
-    }
-}
-
-// --- SISTEMA DE NOTIFICACIONES DE SOLICITUDES (Duelo/Amistad/Trade) ---
+// --- SISTEMA DE NOTIFICACIONES DE SOLICITUDES ---
 async function revisarSolicitudes() {
     if (!usuario) return;
     try {
@@ -612,7 +435,6 @@ async function revisarSolicitudes() {
         const solicitudes = await res.json();
 
         solicitudes.forEach(sol => {
-            // Solo mostrar si no existe ya el cartelito en pantalla
             if (!document.getElementById(`sol-${sol._id}`)) {
                 mostrarPopUpSolicitud(sol);
             }
@@ -626,7 +448,7 @@ function mostrarPopUpSolicitud(sol) {
     box.className = "fixed bottom-24 left-4 right-4 bg-indigo-950 border-2 border-indigo-500 p-5 rounded-[2rem] z-[9000] animate-bounce-in shadow-2xl";
     
     let icono = sol.tipo === 'duelo' ? 'fa-swords text-red-500' : 'fa-user-plus text-indigo-400';
-    let accionNom = sol.tipo === 'duelo' ? 'te reta a un DUELO' : 'quiere ser tu amigo';
+    let accionNom = sol.tipo === 'duelo' ? 'te reta a un DUELO' : (sol.tipo === 'trade' ? 'quiere TRADEAR contigo' : 'quiere ser tu amigo');
 
     box.innerHTML = `
         <p class="text-white hud-text-xs mb-4 uppercase font-black tracking-tight">
@@ -640,10 +462,10 @@ function mostrarPopUpSolicitud(sol) {
     document.body.appendChild(box);
 }
 
-// Ejecutar cada 5 segundos
+// Ejecutar cada 5 segundos para recibir retos/amistad
 setInterval(revisarSolicitudes, 5000);
 
-// --- FUNCIÓN ÚNICA PARA ACEPTAR ---
+// --- GESTIÓN DE INTERACCIONES ---
 async function aceptarSol(solId, tipo) {
     let ruta = 'aceptar-amistad'; 
     if(tipo === 'duelo') ruta = 'aceptar-duelo';
@@ -658,20 +480,26 @@ async function aceptarSol(solId, tipo) {
         
         if(tipo === 'duelo') ejecutarDuelo(data.oponenteId);
         
-        await cargarDatos(); // Recarga amigos y harem
-    } catch (e) {
-        notificar("Error al procesar", "error");
-    }
+        await cargarDatos(); 
+    } catch (e) { notificar("Error al procesar", "error"); }
 }
 
 async function rechazarSol(solId) {
-    // Solo lo quitamos de la vista (el servidor las limpia luego o puedes añadir ruta de delete)
     document.getElementById(`sol-${solId}`)?.remove();
 }
 
-// --- ACCIONES DE USUARIO ---
+// --- ACCIONES DE USUARIO (MODAL) ---
 function abrirMenuDuelo() {
+    if(!userEnMira) return;
     enviarSol('duelo');
+    notificar(`Reto de duelo enviado a ${userEnMira.nombre}`);
+    cerrarAcciones();
+}
+
+function abrirTrade() {
+    if(!userEnMira) return;
+    enviarSol('trade');
+    notificar(`Solicitud de intercambio enviada`);
     cerrarAcciones();
 }
 
