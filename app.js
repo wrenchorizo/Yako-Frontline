@@ -74,7 +74,33 @@ async function cargarDatos() {
         const data = await res.json();
         document.getElementById('user-display').innerText = data.username;
         document.getElementById('user-money').innerText = `$${data.balance.toLocaleString()}`;
-        
+
+        // --- RENDERIZAR LISTA DE AMIGOS ---
+        const listaAmigos = document.getElementById('vista-amigos');
+        if (data.amigos && data.amigos.length > 0) {
+            listaAmigos.innerHTML = data.amigos.map(amigo => `
+                <div class="bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center mb-2" 
+                     onclick="abrirAccionesUsuario('${amigo._id}', '${amigo.username}', 'amigo')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center font-black text-white shadow-inner">
+                            ${amigo.username[0].toUpperCase()}
+                        </div>
+                        <div>
+                            <p class="font-black hud-text-sm uppercase italic">${amigo.username}</p>
+                            <p class="text-[8px] text-indigo-400 font-bold uppercase">Nivel ${amigo.nivel || 1} • En línea</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-600"></i>
+                </div>
+            `).join('');
+        } else {
+            listaAmigos.innerHTML = `
+                <div class="text-center py-10 opacity-40">
+                    <i class="fas fa-user-friends text-4xl mb-3"></i>
+                    <p class="hud-text-xs font-black uppercase">Tu lista está vacía</p>
+                </div>`;
+        }
+
         if(data.ultimaInvocacion) iniciarTimerInvocacion(data.ultimaInvocacion);
         verificarMision(data);
         cargarHarem();
@@ -484,4 +510,45 @@ async function aceptarAmistad(solId) {
 async function rechazarSol(solId) {
     // Aquí podrías hacer un fetch para borrarla, por ahora solo la quitamos de la vista
     document.getElementById(`sol-${solId}`).remove();
+}
+
+// Retar a Duelo
+function abrirMenuDuelo() {
+    if(!userEnMira) return;
+    enviarSol('duelo');
+    notificar(`Reto de duelo enviado a ${userEnMira.nombre}`);
+    cerrarAcciones();
+}
+
+// Abrir Tradeo
+function abrirTrade() {
+    if(!userEnMira) return;
+    // Aquí puedes redirigir a un modal de tradeo o simplemente enviar la sol
+    enviarSol('trade');
+    notificar(`Solicitud de intercambio enviada`);
+    cerrarAcciones();
+}
+
+// Regalar Personaje
+async function regalarPj() {
+    // Primero necesitamos elegir qué PJ regalar (podrías usar un pequeño prompt por ahora)
+    const nombrePj = prompt("Escribe el nombre exacto del personaje que quieres regalar:");
+    if(!nombrePj) return;
+
+    const res = await fetch(`${API_URL}/regalar-personaje`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            emisorId: usuario.id, 
+            receptorId: userEnMira.id, 
+            nombrePj: nombrePj.trim() 
+        })
+    });
+
+    const data = await res.json();
+    if(data.error) return notificar(data.error, "error");
+    
+    notificar(`¡Has enviado a ${nombrePj} a ${userEnMira.nombre}!`);
+    cargarDatos(); // Para refrescar tu harem
+    cerrarAcciones();
 }
