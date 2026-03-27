@@ -18,22 +18,44 @@ function notificar(msj, tipo = 'info') {
     setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 500); }, 3500);
 }
 
-// --- NAVEGACIÓN Y MENÚ ---
+// --- NAVEGACIÓN Y MENÚ (CORREGIDO PARA MÓVIL) ---
 function toggleSidebar() {
     const side = document.getElementById('sidebar');
     const texts = document.querySelectorAll('.nav-text');
-    side.classList.toggle('expanded');
-    texts.forEach(t => t.classList.toggle('hidden'));
+    
+    // Si estamos en móvil, usamos traslación. Si no, usamos expansión.
+    if (window.innerWidth < 768) {
+        side.classList.toggle('-translate-x-full');
+        side.classList.toggle('translate-x-0');
+    } else {
+        side.classList.toggle('expanded');
+        texts.forEach(t => t.classList.toggle('hidden'));
+    }
 }
 
 function changeTab(tab, btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab', 'text-white'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('text-gray-500'));
+    // Cerrar menú automáticamente en móvil al elegir pestaña
+    if (window.innerWidth < 768) {
+        const side = document.getElementById('sidebar');
+        side.classList.add('-translate-x-full');
+        side.classList.remove('translate-x-0');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active-tab', 'text-white');
+        b.classList.add('text-gray-500');
+    });
+    
     btn.classList.add('active-tab', 'text-white');
     btn.classList.remove('text-gray-500');
 
-    ['harem', 'mundo', 'invocacion', 'social'].forEach(t => document.getElementById(`tab-${t}`).classList.add('hidden'));
-    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    ['harem', 'mundo', 'invocacion', 'social'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if(el) el.classList.add('hidden');
+    });
+    
+    const target = document.getElementById(`tab-${tab}`);
+    if(target) target.classList.remove('hidden');
     tabActual = tab;
 }
 
@@ -259,7 +281,7 @@ function iniciarTimerMision(fin) {
     }, 1000);
 }
 
-
+// --- LÓGICA DEL PORTAL (CORREGIDA) ---
 async function intentarInvocacion() {
     try {
         const res = await fetch(`${API_URL}/invocar`, {
@@ -268,7 +290,7 @@ async function intentarInvocacion() {
             body: JSON.stringify({ userId: usuario.id })
         });
         
-        const data = await res.json();
+        const data = await res.json(); // <-- Esto faltaba y rompía el botón
         
         if(data.error) return notificar(data.error, "error");
 
@@ -278,17 +300,53 @@ async function intentarInvocacion() {
         
         const disp = document.getElementById('inv-disponibilidad');
         disp.innerText = data.estado;
-        disp.className = data.disponible ? 
-            "p-3 rounded-xl border border-green-500/30 text-green-400 font-black" : 
-            "p-3 rounded-xl border border-red-500/30 text-red-400 font-black";
+        disp.className = data.disponible ? "p-3 rounded-xl border border-green-500/30 text-green-400 font-black" : "p-3 rounded-xl border border-red-500/30 text-red-400 font-black";
         
         document.getElementById('modal-invocacion').classList.remove('hidden');
-        cargarDatos();
+        
+        // Al invocar con éxito, reiniciamos datos y timer
+        cargarDatos(); 
     } catch (e) {
-        console.error("Error invocando:", e);
-        notificar("Error al invocar", "error");
+        notificar("Error al conectar con el portal", "error");
     }
 }
+
+function cerrarInvocacion() {
+    document.getElementById('modal-invocacion').classList.add('hidden');
+}
+
+// ESTA FUNCIÓN ES NUEVA: Pégala justo aquí abajo
+function iniciarTimerInvocacion(ultimaInvocacion) {
+    if(invTimerInterval) clearInterval(invTimerInterval);
+
+    // Buscamos el botón de invocar para ponerle el tiempo
+    const btnInvocar = document.querySelector('#tab-invocacion button');
+
+    invTimerInterval = setInterval(() => {
+        const ahora = Date.now();
+        const ultima = new Date(ultimaInvocacion).getTime();
+        const cooldown = 20 * 60 * 1000; // 20 minutos
+        const restante = cooldown - (ahora - ultima);
+
+        if (restante <= 0) {
+            clearInterval(invTimerInterval);
+            if(btnInvocar) {
+                btnInvocar.disabled = false;
+                btnInvocar.innerHTML = `<i class="fas fa-bolt mr-2"></i> INVOCAR PERSONAJE`;
+                btnInvocar.className = "w-full bg-indigo-600 hover:bg-indigo-500 py-6 rounded-[2rem] font-black hud-text-sm shadow-lg border-b-4 border-indigo-900 active:border-b-0 transition-all";
+            }
+        } else {
+            if(btnInvocar) {
+                btnInvocar.disabled = true;
+                const m = Math.floor(restante / 60000);
+                const s = Math.floor((restante % 60000) / 1000);
+                btnInvocar.innerHTML = `<i class="fas fa-clock mr-2"></i> RECARGA: ${m}:${s < 10 ? '0'+s : s}`;
+                btnInvocar.className = "w-full bg-gray-800 py-6 rounded-[2rem] font-black hud-text-sm shadow-lg opacity-50 cursor-not-allowed";
+            }
+        }
+    }, 1000);
+}
+
 
 // INICIO
 if(usuario) {
