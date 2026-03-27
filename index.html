@@ -15,12 +15,31 @@
         .hud-text-sm { font-size: 0.75rem; }
         
         /* Menú Plegable Universal */
-        .sidebar { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 4rem; }
-        .sidebar.expanded { width: 12rem; }
-        @media (max-width: 768px) {
-            .sidebar { width: 100%; height: 60px; bottom: 0; position: fixed; flex-direction: row; }
-            .sidebar.expanded { height: 200px; flex-direction: column; }
-        }
+                @media (max-width: 768px) {
+            .sidebar { 
+                width: 70%; /* Ancho del menú en celular */
+                height: 100vh; 
+                position: fixed; 
+                left: 0; 
+                top: 0; 
+                transform: translateX(-100%); /* Escondido a la izquierda */
+                z-index: 5000;
+            }
+            .sidebar.translate-x-0 { transform: translateX(0); } /* Al abrirse */
+            
+            /* Botón flotante para abrir el menú en celular */
+            .mobile-menu-btn {
+                display: block;
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                z-index: 4000;
+                background: #4f46e5;
+                padding: 15px;
+                border-radius: 50%;
+                box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+            }
+                }
 
         /* Fondo Pinterest Aventura */
         .bg-adventure { 
@@ -69,34 +88,41 @@
         </div>
     </div>
 
-    <div id="game-screen" class="hidden flex flex-col md:flex-row w-full h-full">
+        <div id="game-screen" class="hidden flex flex-col md:flex-row w-full h-full">
         
-        <nav id="sidebar" class="sidebar fixed left-0 top-0 h-screen bg-gray-900/90 backdrop-blur-xl border-r border-gray-800 flex flex-col p-3 z-[100] transition-all overflow-y-auto">
+        <button onclick="toggleSidebar()" class="mobile-menu-btn md:hidden">
+            <i class="fas fa-bars text-white text-xl"></i>
+        </button>
+
+        <nav id="sidebar" class="sidebar fixed left-0 top-0 h-screen bg-gray-900/95 backdrop-blur-2xl border-r border-gray-800 flex flex-col p-5 z-[5000] transition-all -translate-x-full md:translate-x-0">
     
-    <button onclick="toggleSidebar()" class="w-full p-3 mb-6 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
-        <i class="fas fa-bars text-xl"></i>
-    </button>
+            <div class="flex items-center justify-between mb-10">
+                <h1 class="nav-text hidden font-black text-indigo-500 italic">YAKAPP</h1>
+                <button onclick="toggleSidebar()" class="p-2 text-gray-500 hover:text-white">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
 
-    <div class="flex flex-col gap-3 flex-1">
-        <button onclick="changeTab('harem', this)" class="tab-btn p-3 flex items-center gap-4 active-tab text-white transition-all rounded-xl">
-            <i class="fas fa-users text-lg"></i> 
-            <span class="nav-text hidden font-black uppercase hud-text-xs">Harem</span>
-        </button>
-        <button onclick="changeTab('mundo', this)" class="tab-btn p-3 flex items-center gap-4 text-gray-500 transition-all rounded-xl">
-            <i class="fas fa-khanda text-lg"></i> 
-            <span class="nav-text hidden font-black uppercase hud-text-xs">Aventura</span>
-        </button>
-        <button onclick="changeTab('invocacion', this)" class="tab-btn p-3 flex items-center gap-4 text-gray-500 transition-all rounded-xl">
-            <i class="fas fa-door-open text-lg"></i> 
-            <span class="nav-text hidden font-black uppercase hud-text-xs">Invocación</span>
-        </button>
-        <button onclick="changeTab('social', this)" class="tab-btn p-3 flex items-center gap-4 text-gray-500 transition-all rounded-xl">
-            <i class="fas fa-comments text-lg"></i> 
-            <span class="nav-text hidden font-black uppercase hud-text-xs">Social</span>
-        </button>
-    </div>
+            <div class="flex flex-col gap-4 flex-1">
+                <button onclick="changeTab('harem', this)" class="tab-btn p-4 flex items-center gap-4 active-tab text-white transition-all rounded-2xl">
+                    <i class="fas fa-users text-lg"></i> 
+                    <span class="nav-text hidden font-black uppercase hud-text-xs">Harem</span>
+                </button>
+                <button onclick="changeTab('mundo', this)" class="tab-btn p-4 flex items-center gap-4 text-gray-500 transition-all rounded-2xl">
+                    <i class="fas fa-khanda text-lg"></i> 
+                    <span class="nav-text hidden font-black uppercase hud-text-xs">Aventura</span>
+                </button>
+                <button onclick="changeTab('invocacion', this)" class="tab-btn p-4 flex items-center gap-4 text-gray-500 transition-all rounded-2xl">
+                    <i class="fas fa-door-open text-lg"></i> 
+                    <span class="nav-text hidden font-black uppercase hud-text-xs">Portal</span>
+                </button>
+                <button onclick="changeTab('social', this)" class="tab-btn p-4 flex items-center gap-4 text-gray-500 transition-all rounded-2xl">
+                    <i class="fas fa-comments text-lg"></i> 
+                    <span class="nav-text hidden font-black uppercase hud-text-xs">Social</span>
+                </button>
+            </div>
 
-            <button onclick="confirmarLogout()" class="p-3 flex items-center gap-4 text-red-500 mt-auto transition-all">
+            <button onclick="confirmarLogout()" class="p-4 flex items-center gap-4 text-red-500 mt-auto bg-red-500/5 rounded-2xl">
                 <i class="fas fa-power-off text-lg"></i> <span class="nav-text hidden font-black uppercase hud-text-xs">Salir</span>
             </button>
         </nav>
@@ -134,16 +160,20 @@
             </section>
 
           <section id="tab-invocacion" class="hidden h-full bg-portal flex flex-col justify-center p-6">
-                <div class="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 text-center shadow-xl">
-                    <h2 class="text-2xl font-black mb-1 uppercase italic tracking-tighter">Portal</h2>
-                    <p class="text-gray-500 hud-text-xs mb-8 font-bold uppercase tracking-widest">Ruleta Dimensional</p>
-                    <div class="py-12 border border-gray-800 rounded-3xl mb-8 bg-black/40 flex items-center justify-center">
-                        <i class="fas fa-door-open text-4xl text-gray-800"></i>
+                <div class="bg-gray-900/90 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 text-center shadow-2xl max-w-sm mx-auto w-full">
+                    <h2 class="text-2xl font-black mb-1 uppercase italic tracking-tighter text-indigo-400">Portal</h2>
+                    <p class="text-gray-500 hud-text-xs mb-8 font-bold uppercase tracking-widest">Invocación Dimensional</p>
+                    
+                    <div class="py-16 border border-white/5 rounded-[2.5rem] mb-8 bg-black/40 flex items-center justify-center relative overflow-hidden">
+                        <i class="fas fa-circle-notch fa-spin absolute text-indigo-500/20 text-9xl"></i>
+                        <i class="fas fa-door-open text-5xl text-indigo-500 relative z-10"></i>
                     </div>
-                    <button id="btn-invocar" onclick="intentarInvocacion()" class="w-full bg-indigo-600 py-5 rounded-2xl font-black hud-text-sm shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">INVOCAR</button>
-                    <p id="invocar-timer" class="hud-text-xs text-gray-500 mt-4 font-black uppercase tracking-widest hidden"></p>
+
+                    <button id="btn-invocar" onclick="intentarInvocacion()" class="w-full bg-indigo-600 py-6 rounded-2xl font-black hud-text-sm shadow-xl shadow-indigo-500/20 active:scale-95 transition-all uppercase tracking-widest">
+                        INVOCAR PERSONAJE
+                    </button>
                 </div>
-            </section>
+          </section>
           <section id="tab-social" class="hidden p-4 h-full flex flex-col gap-4">
     <div class="bg-gray-900 rounded-[2rem] border border-gray-800 p-4 flex-1 flex flex-col overflow-hidden">
         <div class="flex gap-2 mb-4">
