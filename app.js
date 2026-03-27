@@ -217,23 +217,6 @@ function verificarMision(user) {
     }
 }
 
-function iniciarTimerMision(fin) {
-    const interval = setInterval(async () => {
-        const diff = fin - new Date();
-        if(diff <= 0) {
-            clearInterval(interval);
-            const res = await fetch(`${API_URL}/mision/reclamar/${usuario.id}`, { method: 'POST' });
-            const data = await res.json();
-            if(data.fueVencido) notificar("¡DERROTADOS! Regresan sin energía.", "error");
-            else notificar(`¡Misión éxito! +$${data.ganancia}`);
-            cargarDatos();
-        } else {
-            const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
-            document.getElementById('timer-mision').innerText = `${m}:${s < 10 ? '0'+s : s}`;
-        }
-    }, 1000);
-}
-
 // --- INVOCACIÓN (TIMER MM:SS) ---
 function iniciarTimerMision(fin) {
     if(window.misionInterval) clearInterval(window.misionInterval); // Evita duplicados
@@ -269,8 +252,6 @@ async function intentarInvocacion() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ userId: usuario.id })
     });
-    const data = await res.json();
-    if(data.error) return notificar(data.error, "error");
 
     document.getElementById('inv-img').src = data.imagen;
     document.getElementById('inv-nombre').innerText = data.nombre;
