@@ -676,3 +676,26 @@ if (usuario) {
         }
     }, 3000);
 }
+
+const data = await res.json();
+        if(data.error) return notificar(data.error, "error");
+        
+        notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
+        cerrarAcciones();
+    } catch (e) {
+        notificar("Error de conexión", "error");
+    }
+}
+
+// --- INTERVALO DE ACTUALIZACIÓN ---
+// Esto mantiene el chat vivo y refresca datos cada 3 segundos
+setInterval(() => {
+    if (usuario && tabActual === 'social' && socialTabActual === 'chat' && chatTarget) {
+        cargarChat();
+    }
+}, 3000);
+
+// Inicialización al cargar la página
+if (usuario) {
+    cargarDatos();
+}
