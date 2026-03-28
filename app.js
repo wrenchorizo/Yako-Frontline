@@ -404,10 +404,10 @@ async function abrirAccionesUsuario(id, nombre, relacion) {
     const estaBloqueado = usuario.bloqueados?.includes(id);
 
     if (estaBloqueado) {
-        container.innerHTML = `
-            <button onclick="ejecutarBloqueo('${id}', 'desbloquear')" class="w-full bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Desbloquear Usuario</button>
-            <button onclick="cerrarAcciones()" class="mt-4 text-gray-500 hud-text-xs font-black uppercase">Cerrar</button>
-        `;
+       container.innerHTML = `
+    <button onclick="ejecutarBloqueo('${id}', 'desbloquear')" class="w-full bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Desbloquear Usuario</button>
+    <button onclick="cerrarAcciones()" class="mt-4 text-gray-500 hud-text-xs font-black uppercase">Cerrar</button>
+`;
     } else {
         let botonesHTML = `
             <button onclick="setChatTarget('${nombre}')" class="bg-indigo-500 py-3 rounded-xl font-black hud-text-xs uppercase italic">Enviar Mensaje</button>
@@ -640,7 +640,9 @@ async function enviarSol(tipo) {
     if(!userEnMira) return;
 
     let extraData = {};
+    // Si es trade, enviamos lo que ofrezco y lo que pido
     if(tipo === 'trade') extraData = { trade: tradeConfig };
+    // Si es duelo, enviamos los IDs de mis 3 luchadores para la suma de niveles
     if(tipo === 'duelo') extraData = { personajes: seleccionTemporal };
 
     try {
@@ -656,11 +658,21 @@ async function enviarSol(tipo) {
             })
         });
         const data = await res.json();
+        
         if(data.error) return notificar(data.error, "error");
         
-        notificar(`Solicitud de ${tipo} enviada`);
+        notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
         cerrarAcciones();
     } catch (e) {
-        notificar("Error de conexión", "error");
+        notificar("Error al enviar la solicitud", "error");
     }
+}
+
+// Función para actualizar el chat en tiempo real si está abierto
+if (usuario) {
+    setInterval(() => {
+        if (chatTarget && socialTabActual === 'chat') {
+            cargarChat();
+        }
+    }, 3000);
 }
