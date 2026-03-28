@@ -642,7 +642,7 @@ async function enviarSol(tipo) {
     let extraData = {};
     // Si es trade, enviamos lo que ofrezco y lo que pido
     if(tipo === 'trade') extraData = { trade: tradeConfig };
-    // Si es duelo, enviamos los IDs de mis 3 luchadores para la suma de niveles
+    // Si es duelo, enviamos los personajes seleccionados (IDs)
     if(tipo === 'duelo') extraData = { personajes: seleccionTemporal };
 
     try {
@@ -668,32 +668,17 @@ async function enviarSol(tipo) {
     }
 }
 
-// Función para actualizar el chat en tiempo real si está abierto
-if (usuario) {
-    setInterval(() => {
-        if (chatTarget && socialTabActual === 'chat') {
-            cargarChat();
-        }
-    }, 3000);
-}
-
-const data = await res.json();
-        if(data.error) return notificar(data.error, "error");
-        
-        notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
-        cerrarAcciones();
-    } catch (e) {
-        notificar("Error de conexión", "error");
-    }
-}
-
-// --- INTERVALO DE ACTUALIZACIÓN ---
-// Esto mantiene el chat vivo y refresca datos cada 3 segundos
+// --- INTERVALOS DE ACTUALIZACIÓN ---
 setInterval(() => {
     if (usuario && tabActual === 'social' && socialTabActual === 'chat' && chatTarget) {
         cargarChat();
     }
 }, 3000);
+
+// CARGA INICIAL
+if (usuario) {
+    cargarDatos();
+}
 
 // Inicialización al cargar la página
 if (usuario) {
