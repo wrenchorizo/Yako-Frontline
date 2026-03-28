@@ -15,7 +15,7 @@
             .sidebar { width: 70%; height: 100vh; position: fixed; left: 0; top: 0; transform: translateX(-100%); z-index: 5000; transition: transform 0.3s ease; }
             .sidebar.active { transform: translateX(0); }
         }
-        .glass { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); }
+        .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); }
         .animate-bounce-in { animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.3); } 100% { opacity: 1; transform: scale(1); } }
     </style>
@@ -24,14 +24,13 @@
 
     <div id="notificador" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
-    <nav id="sidebar" class="sidebar bg-black/95 border-r border-white/5 p-6 flex flex-col">
-        <h1 class="font-black text-2xl italic mb-8">MENU</h1>
+    <nav id="sidebar" class="sidebar bg-gray-950 border-r border-white/5 p-6 flex flex-col">
+        <h1 class="font-black text-2xl italic mb-8 uppercase tracking-tighter">Yak<span class="text-indigo-500">Menu</span></h1>
         <div class="flex flex-col gap-4">
             <button onclick="switchTab('harem'); toggleSidebar()" class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 font-black hud-text-xs uppercase italic"><i class="fas fa-th-large text-indigo-500"></i> Harem</button>
             <button onclick="switchTab('explorar'); toggleSidebar()" class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 font-black hud-text-xs uppercase italic"><i class="fas fa-map text-indigo-500"></i> Explorar</button>
             <button onclick="switchTab('inventario'); toggleSidebar()" class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 font-black hud-text-xs uppercase italic"><i class="fas fa-briefcase text-indigo-500"></i> Inventario</button>
             <button onclick="switchTab('social'); toggleSidebar()" class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 font-black hud-text-xs uppercase italic"><i class="fas fa-users text-indigo-500"></i> Social</button>
-            <button onclick="switchTab('tienda'); toggleSidebar()" class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 font-black hud-text-xs uppercase italic"><i class="fas fa-shopping-cart text-indigo-500"></i> Tienda</button>
         </div>
     </nav>
 
@@ -42,50 +41,53 @@
                     <img src="https://i.pinimg.com/originals/ae/c4/9d/aec49d689626466f8f53702119f1870a.jpg" class="w-full h-full rounded-full object-cover">
                 </div>
                 <div>
-                    <h2 id="user-name" class="font-black hud-text-sm uppercase italic">Cargando...</h2>
-                    <p class="text-[8px] text-indigo-400 font-bold uppercase tracking-widest">Nivel <span id="user-level">1</span></p>
+                    <h2 id="user-name" class="font-black hud-text-sm uppercase italic tracking-tighter text-white">Cargando...</h2>
+                    <p class="text-[8px] text-indigo-400 font-bold uppercase tracking-widest italic">Nivel <span id="user-level">1</span></p>
                 </div>
             </div>
-            <button onclick="toggleSidebar()" class="text-xl p-2"><i class="fas fa-bars"></i></button>
+            <button onclick="toggleSidebar()" class="text-xl p-2 text-white/50"><i class="fas fa-bars"></i></button>
         </header>
 
         <div class="flex-1 overflow-hidden relative">
-            <section id="tab-harem" class="p-4 h-full overflow-y-auto"><div id="harem-grid" class="grid grid-cols-2 gap-3"></div></section>
+            <section id="tab-harem" class="p-4 h-full overflow-y-auto">
+                <div id="harem-grid" class="grid grid-cols-2 gap-3"></div>
+            </section>
             
             <section id="tab-explorar" class="hidden p-4 h-full flex flex-col items-center justify-center">
-                <div id="explore-card" class="w-64 h-80 bg-gray-900 rounded-[3rem] border-4 border-white/5 mb-8 flex items-center justify-center">
+                <div id="explore-card" class="w-64 h-80 bg-gray-900 rounded-[3rem] border-4 border-white/5 mb-8 flex items-center justify-center overflow-hidden">
                     <i class="fas fa-map-marked-alt text-6xl text-indigo-500 opacity-20"></i>
                 </div>
-                <button onclick="ejecutarExploracion()" class="bg-indigo-600 px-12 py-5 rounded-[2rem] font-black hud-text-xs uppercase italic">Explorar</button>
+                <button onclick="ejecutarExploracion()" class="bg-indigo-600 px-12 py-5 rounded-[2rem] font-black hud-text-xs uppercase italic shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">Explorar</button>
             </section>
 
-            <section id="tab-inventario" class="hidden p-4 h-full overflow-y-auto"><div id="inventario-grid" class="grid grid-cols-3 gap-3"></div></section>
+            <section id="tab-inventario" class="hidden p-4 h-full overflow-y-auto">
+                <div id="inventario-grid" class="grid grid-cols-3 gap-3"></div>
+            </section>
 
-            <section id="tab-tienda" class="hidden p-4 h-full overflow-y-auto"><div id="tienda-grid" class="grid grid-cols-1 gap-4"></div></section>
-<section id="tab-social" class="hidden p-4 h-full flex flex-col gap-4">
-                <div class="bg-gray-900 rounded-[2rem] border border-gray-800 p-4 flex-1 flex flex-col overflow-hidden">
+            <section id="tab-social" class="hidden p-4 h-full flex flex-col gap-4">
+                <div class="bg-gray-900 rounded-[2rem] border border-white/5 p-4 flex-1 flex flex-col overflow-hidden shadow-2xl">
                     <div class="flex gap-2 mb-4">
-                        <button onclick="switchSocial('chat')" id="btn-tab-chat" class="flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black">CHAT</button>
-                        <button onclick="switchSocial('usuarios')" id="btn-tab-users" class="flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black">COMUNIDAD</button>
+                        <button onclick="switchSocial('chat')" id="btn-tab-chat" class="flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black uppercase text-indigo-400">Chat</button>
+                        <button onclick="switchSocial('usuarios')" id="btn-tab-users" class="flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black uppercase text-gray-500">Usuarios</button>
                     </div>
 
                     <div id="social-chat" class="flex-1 flex flex-col overflow-hidden">
-                        <span id="chat-target-label" class="hud-text-xs font-black text-indigo-400 mb-2 uppercase italic">Selecciona un usuario</span>
-                        <div id="chat-container" class="flex-1 overflow-y-auto space-y-2 mb-3 flex flex-col-reverse p-2 bg-black/20 rounded-2xl"></div>
-                        <div id="chat-controls" class="flex gap-2 opacity-30 pointer-events-none transition-all">
-                            <input type="text" id="chat-input" placeholder="Escribir..." class="flex-1 bg-black border border-white/5 p-4 rounded-2xl hud-text-xs outline-none">
-                            <button onclick="enviarMensaje()" class="bg-indigo-600 px-6 rounded-2xl"><i class="fas fa-paper-plane"></i></button>
+                        <span id="chat-target-label" class="hud-text-xs font-black text-indigo-400 mb-2 uppercase italic">Elige un contacto</span>
+                        <div id="chat-container" class="flex-1 overflow-y-auto space-y-2 mb-3 flex flex-col-reverse p-2"></div>
+                        <div id="chat-controls" class="flex gap-2 opacity-30 pointer-events-none">
+                            <input type="text" id="chat-input" placeholder="Mensaje..." class="flex-1 bg-black border border-white/10 p-4 rounded-2xl hud-text-xs outline-none text-white">
+                            <button onclick="enviarMensaje()" class="bg-indigo-600 px-6 rounded-2xl"><i class="fas fa-paper-plane text-xs"></i></button>
                         </div>
                     </div>
 
                     <div id="social-usuarios" class="hidden flex-1 flex flex-col overflow-hidden">
                         <div class="flex gap-2 mb-4">
-                            <button onclick="verPestanaSocial('amigos')" class="flex-1 bg-indigo-600/20 py-2 rounded-xl hud-text-xs font-black uppercase">Amigos</button>
-                            <button onclick="verPestanaSocial('buscar')" class="flex-1 bg-gray-800 py-2 rounded-xl hud-text-xs font-black uppercase">Buscar</button>
+                            <button onclick="verPestanaSocial('amigos')" class="flex-1 bg-indigo-600/10 py-2 rounded-xl hud-text-xs font-black uppercase">Mis Amigos</button>
+                            <button onclick="verPestanaSocial('buscar')" class="flex-1 bg-gray-800/50 py-2 rounded-xl hud-text-xs font-black uppercase">Buscar</button>
                         </div>
                         <div id="vista-amigos" class="flex-1 overflow-y-auto space-y-2"></div>
                         <div id="vista-buscar" class="hidden flex-1 flex flex-col gap-3">
-                            <input type="text" id="inp-search" oninput="buscarUsuarios()" placeholder="Nombre..." class="w-full bg-black border border-white/10 p-4 rounded-2xl hud-text-xs outline-none">
+                            <input type="text" id="inp-search" oninput="buscarUsuarios()" placeholder="Nombre..." class="w-full bg-black border border-white/10 p-4 rounded-2xl hud-text-xs outline-none text-white">
                             <div id="res-busqueda" class="space-y-2 overflow-y-auto"></div>
                         </div>
                     </div>
@@ -95,40 +97,40 @@
     </main>
 
     <div id="auth-screen" class="fixed inset-0 z-[9000] bg-black flex items-center justify-center p-6 text-center">
-        <div>
-            <h1 class="font-black text-4xl italic mb-8">YAK<span class="text-indigo-500">APP</span></h1>
-            <input type="text" id="login-user" placeholder="USUARIO" class="bg-gray-900 border border-white/10 p-4 rounded-2xl hud-text-xs outline-none mb-4 w-64 text-center">
-            <button onclick="login()" class="w-full bg-indigo-600 p-4 rounded-2xl font-black hud-text-xs uppercase italic">Entrar</button>
+        <div class="animate-bounce-in">
+            <h1 class="font-black text-4xl italic mb-10 tracking-tighter">YAK<span class="text-indigo-500">APP</span></h1>
+            <input type="text" id="login-user" placeholder="USUARIO" class="bg-gray-900 border border-white/10 p-5 rounded-3xl hud-text-xs outline-none mb-4 w-72 text-center text-white font-black uppercase tracking-widest">
+            <button onclick="login()" class="w-full bg-indigo-600 p-5 rounded-3xl font-black hud-text-xs uppercase italic shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">Entrar al Nexo</button>
         </div>
     </div>
 
     <div id="modal-user-acciones" class="hidden fixed inset-0 z-[6000] glass flex items-center justify-center p-6">
-        <div class="bg-gray-950 w-full max-w-xs rounded-[2.5rem] border border-white/10 p-6 shadow-2xl">
-            <h2 id="acc-nombre" class="font-black hud-text-sm uppercase italic text-center mb-6">NOMBRE</h2>
+        <div class="bg-gray-950 w-full max-w-xs rounded-[2.5rem] border border-white/10 p-8 shadow-2xl">
+            <h2 id="acc-nombre" class="font-black hud-text-sm uppercase italic text-center mb-6 tracking-widest">NOMBRE</h2>
             <div id="contenedor-botones-acciones" class="grid grid-cols-1 gap-2"></div>
-            <button onclick="cerrarAcciones()" class="w-full mt-4 py-2 text-[8px] text-gray-600 uppercase">Cerrar</button>
+            <button onclick="cerrarAcciones()" class="w-full mt-6 py-2 text-[8px] font-black text-gray-600 uppercase hover:text-white transition-colors">Cerrar</button>
         </div>
     </div>
 
     <div id="modal-seleccion-pj" class="hidden fixed inset-0 z-[7000] glass flex items-center justify-center p-4">
-        <div class="bg-gray-900 w-full max-w-sm rounded-[2.5rem] border border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
-            <div class="p-6 border-b border-white/5 flex justify-between">
-                <h3 id="sel-pj-titulo" class="font-black hud-text-sm uppercase italic">SELECCIONA</h3>
-                <button onclick="cerrarSeleccionPj()"><i class="fas fa-times"></i></button>
+        <div class="bg-gray-900 w-full max-w-sm rounded-[2.5rem] border border-white/10 overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+                <h3 id="sel-pj-titulo" class="font-black hud-text-sm uppercase italic text-indigo-400">Seleccionar</h3>
+                <button onclick="cerrarSeleccionPj()" class="text-gray-500 hover:text-white transition-colors"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div id="lista-pjs-seleccion" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-2"></div>
-            <div id="footer-seleccion" class="p-4 bg-black/20 hidden">
-                <button id="btn-confirmar-sel" class="w-full bg-indigo-600 py-4 rounded-xl font-black hud-text-xs uppercase">Confirmar</button>
+            <div id="lista-pjs-seleccion" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3"></div>
+            <div id="footer-seleccion" class="p-4 bg-black/40 border-t border-white/5 hidden">
+                <button id="btn-confirmar-sel" class="w-full bg-indigo-600 py-4 rounded-xl font-black hud-text-xs uppercase italic shadow-xl">Confirmar</button>
             </div>
         </div>
     </div>
 
     <div id="modal-confirmar" class="hidden fixed inset-0 z-[8000] glass flex items-center justify-center p-6">
         <div class="bg-gray-950 p-8 rounded-3xl border border-red-500/30 text-center max-w-xs w-full shadow-2xl">
-            <p id="conf-texto" class="font-bold mb-8 hud-text-xs text-gray-300">¿ESTÁS SEGURO?</p>
-            <div class="grid grid-cols-2 gap-3">
-                <button id="btn-conf-si" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs text-white">SÍ</button>
-                <button onclick="cerrarConfirmacion()" class="bg-gray-800 py-3 rounded-xl font-black hud-text-xs">NO</button>
+            <p id="conf-texto" class="font-bold mb-8 uppercase hud-text-xs tracking-tight text-gray-300">¿Proceder con la acción?</p>
+            <div class="grid grid-cols-2 gap-4">
+                <button id="btn-conf-si" class="bg-red-600 py-3 rounded-xl font-black uppercase hud-text-xs text-white shadow-lg shadow-red-500/20 active:scale-95 transition-all">SÍ</button>
+                <button onclick="cerrarConfirmacion()" class="bg-gray-800 py-3 rounded-xl font-black uppercase hud-text-xs text-gray-400">NO</button>
             </div>
         </div>
     </div>
