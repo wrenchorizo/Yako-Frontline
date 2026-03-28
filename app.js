@@ -405,7 +405,7 @@ async function abrirAccionesUsuario(id, nombre, relacion) {
 
     if (estaBloqueado) {
         container.innerHTML = `
-            <button onclick="toggleBloqueo('${id}', 'desbloquear')" class="w-full bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Desbloquear Usuario</button>
+            <button onclick="ejecutarBloqueo('${id}', 'desbloquear')" class="w-full bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Desbloquear Usuario</button>
             <button onclick="cerrarAcciones()" class="mt-4 text-gray-500 hud-text-xs font-black uppercase">Cerrar</button>
         `;
     } else {
@@ -431,6 +431,34 @@ async function abrirAccionesUsuario(id, nombre, relacion) {
         `;
     }
     modal.classList.remove('hidden');
+}
+
+async function abrirMenuTrade() {
+    cerrarAcciones();
+    const res = await fetch(`${API_URL}/harem/${usuario.id}`);
+    const pjs = await res.json();
+    
+    const lista = document.getElementById('lista-pjs-seleccion');
+    document.getElementById('sel-pj-titulo').innerText = "¿Qué personaje ofreces?";
+    
+    lista.innerHTML = pjs.map(pj => `
+        <div onclick="seleccionarPjParaTrade('${pj.nombre}')" class="bg-black/40 p-3 rounded-2xl border border-white/5 text-center cursor-pointer hover:border-green-500">
+            <img src="${pj.imagen}" class="w-12 h-12 mx-auto mb-1 object-contain">
+            <p class="hud-text-xs font-black uppercase truncate">${pj.nombre}</p>
+        </div>
+    `).join('');
+    
+    document.getElementById('modal-seleccion-pj').classList.remove('hidden');
+}
+
+function seleccionarPjParaTrade(nombrePj) {
+    tradeConfig.mio = nombrePj;
+    const pjDeseado = prompt("Escribe el nombre del personaje que quieres recibir a cambio:");
+    if(!pjDeseado) return;
+    
+    tradeConfig.suyo = pjDeseado.trim();
+    enviarSol('trade');
+    cerrarSeleccionPj();
 }
 
 // --- LÓGICA DE SELECCIÓN DE PERSONAJES ---
@@ -544,6 +572,19 @@ async function ejecutarBloqueo(targetId, tipo) {
     cargarDatos();
 }
 
+function cerrarAcciones() {
+    document.getElementById('modal-user-acciones').classList.add('hidden');
+}
+
+function cerrarSeleccionPj() {
+    document.getElementById('modal-seleccion-pj').classList.add('hidden');
+    document.getElementById('footer-seleccion').classList.add('hidden');
+}
+
+function cerrarConfirmacion() {
+    document.getElementById('modal-confirmar').classList.add('hidden');
+}
+
 async function cargarChat() {
     if(!chatTarget) return; // Si no hay nadie seleccionado, no cargamos nada
 
@@ -563,4 +604,63 @@ async function cargarChat() {
             </div>
         </div>
     `).reverse().join('');
+}
+function setChatTarget(target) {
+    chatTarget = target;
+    document.getElementById('chat-target-label').innerText = `Chat con ${target}`;
+    
+    // Desbloquear input si estaba gris
+    const controls = document.getElementById('chat-controls');
+    if(controls) controls.classList.remove('opacity-30', 'pointer-events-none');
+    
+    switchSocial('chat');
+    cerrarAcciones();
+    cargarChat();
+}
+
+async function enviarMensaje() {
+    const input = document.getElementById('chat-input');
+    const texto = input.value.trim();
+    if(!texto || !usuario || !chatTarget) return;
+
+    await fetch(`${API_URL}/chat`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ 
+            emisor: usuario.username, 
+            receptor: chatTarget, 
+            texto: texto 
+        })
+    });
+    input.value = "";
+    cargarChat();
+}
+
+async function enviarSol(tipo) {
+    if(!userEnMira) return;
+
+    let extraData = {};
+    if(tipo === 'trade') extraData = { trade: tradeConfig };
+    if(tipo === 'duelo') extraData = { personajes: seleccionTemporal };
+
+    try {
+        const res = await fetch(`${API_URL}/solicitud/enviar`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                emisorId: usuario.id, 
+                emisorName: usuario.username, 
+                receptorId: userEnMira.id, 
+                tipo: tipo,
+                ...extraData
+            })
+        });
+        const data = await res.json();
+        if(data.error) return notificar(data.error, "error");
+        
+        notificar(`Solicitud de ${tipo} enviada`);
+        cerrarAcciones();
+    } catch (e) {
+        notificar("Error de conexión", "error");
+    }
 }
