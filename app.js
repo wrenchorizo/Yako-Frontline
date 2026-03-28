@@ -5,7 +5,10 @@ let equipo = [];
 let tabActual = 'harem';
 let invTimerInterval = null;
 let socialTabActual = 'chat';
-let chatTarget = "global";
+let chatTarget = null;
+let seleccionTemporal = [];
+let pjParaRegalar = null;
+let tradeConfig = { mio: null, suyo: null };
 
 // --- NOTIFICACIONES ---
 function notificar(msj, tipo = 'info') {
@@ -391,233 +394,173 @@ async function buscarUsuarios() {
 }
 
 // El modal ahora decide qué botones mostrar
-function abrirAccionesUsuario(id, nombre, relacion) {
+async function abrirAccionesUsuario(id, nombre, relacion) {
     userEnMira = { id, nombre };
-    document.getElementById('acc-nombre').innerText = nombre;
+    const modal = document.getElementById('modal-user-acciones');
     const container = document.getElementById('contenedor-botones-acciones');
+    document.getElementById('acc-nombre').innerText = nombre;
     
-    let botonesHTML = "";
+    // Verificamos si el usuario está bloqueado (asumiendo que usuario.bloqueados es un array)
+    const estaBloqueado = usuario.bloqueados?.includes(id);
 
-    if (relacion === 'amigo') {
-        botonesHTML = `
-            <button onclick="setChatTarget('${nombre}')" class="bg-indigo-500 py-3 rounded-xl font-black hud-text-xs uppercase italic">Enviar Mensaje</button>
-            <button onclick="abrirMenuDuelo()" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Retar a Duelo</button>
-            <button onclick="enviarSol('trade')" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Tradeo</button>
-            <button onclick="regalarPj()" class="bg-yellow-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Regalar PJ</button>
-            <button onclick="eliminarAmigo('${id}')" class="bg-gray-700 py-3 rounded-xl font-black hud-text-xs uppercase text-red-400">Eliminar Amigo</button>
+    if (estaBloqueado) {
+        container.innerHTML = `
+            <button onclick="toggleBloqueo('${id}', 'desbloquear')" class="w-full bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Desbloquear Usuario</button>
+            <button onclick="cerrarAcciones()" class="mt-4 text-gray-500 hud-text-xs font-black uppercase">Cerrar</button>
         `;
     } else {
-        botonesHTML = `
-            <button onclick="enviarSol('amistad')" class="bg-indigo-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Añadir Amigo</button>
+        let botonesHTML = `
+            <button onclick="setChatTarget('${nombre}')" class="bg-indigo-500 py-3 rounded-xl font-black hud-text-xs uppercase italic">Enviar Mensaje</button>
+        `;
+
+        if (relacion === 'amigo') {
+            botonesHTML += `
+                <button onclick="abrirMenuDuelo()" class="bg-red-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Retar a Duelo</button>
+                <button onclick="abrirMenuTrade()" class="bg-green-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Tradeo</button>
+                <button onclick="abrirMenuRegalo()" class="bg-yellow-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Regalar PJ</button>
+                <button onclick="confirmarBorrarAmigo('${id}', '${nombre}')" class="bg-gray-700 py-3 rounded-xl font-black hud-text-xs uppercase text-red-400">Eliminar Amistad</button>
+            `;
+        } else {
+            botonesHTML += `
+                <button onclick="enviarSol('amistad')" class="bg-indigo-600 py-3 rounded-xl font-black hud-text-xs uppercase italic">Añadir Amigo</button>
+            `;
+        }
+
+        container.innerHTML = botonesHTML + `
+            <button onclick="confirmarBloqueo('${id}', '${nombre}')" class="w-full bg-red-900/40 p-2 rounded-lg text-[9px] font-black uppercase mt-4 text-red-500">Bloquear</button>
         `;
     }
-
-    container.innerHTML = botonesHTML + `
-        <div class="flex gap-2 mt-4">
-            <button onclick="bloquear()" class="flex-1 bg-gray-800 p-2 rounded-lg text-[9px] font-black uppercase">Bloquear</button>
-        </div>
-    `;
-    document.getElementById('modal-user-acciones').classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
-async function eliminarAmigo(exAmigoId) {
-    if(!confirm("¿Eliminar de tu lista de amigos?")) return;
-    await fetch(`${API_URL}/solicitud/eliminar-amistad`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ miId: usuario.id, exAmigoId })
-    });
-    notificar("Amistad eliminada");
+// --- LÓGICA DE SELECCIÓN DE PERSONAJES ---
+
+async function abrirMenuRegalo() {
     cerrarAcciones();
-    cargarDatos();
-    buscarUsuarios(); // Refrescar lista
-}
+    const res = await fetch(`${API_URL}/harem/${usuario.id}`);
+    const pjs = await res.json();
     
-// --- ACCIONES DE USUARIO Y CIERRES ---
-
-async function enviarSol(tipo) {
-    if(!userEnMira) return;
-
-    try {
-        const res = await fetch(`${API_URL}/solicitud/enviar`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                emisorId: usuario.id, 
-                emisorName: usuario.username, 
-                receptorId: userEnMira.id, 
-                tipo: tipo 
-            })
-        });
-        const data = await res.json();
-        
-        if(data.error) return notificar(data.error, "error");
-        
-        notificar(`Solicitud de ${tipo} enviada a ${userEnMira.nombre}`);
-        cerrarAcciones();
-    } catch (e) {
-        notificar("Error al conectar con el servidor", "error");
-    }
-}
-
-function cerrarAcciones() {
-    const modal = document.getElementById('modal-user-acciones');
-    if(modal) modal.classList.add('hidden');
-}
-
-// Inicialización de intervalos
-if (usuario) {
-    setInterval(revisarSolicitudes, 5000);
-}
-
-
-function setChatTarget(target) {
-    chatTarget = target;
-    document.getElementById('chat-target-label').innerText = target === 'global' ? "Chat Global" : `Chat con ${target}`;
-    switchSocial('chat');
-    cargarChat();
-}
-
-
-async function enviarMensaje() {
-    const input = document.getElementById('chat-input');
-    if(!input.value) return;
-    await fetch(`${API_URL}/chat`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ emisor: usuario.username, receptor: chatTarget, texto: input.value })
-    });
-    input.value = "";
-    cargarChat();
-}
-
-async function cargarChat() {
-    const res = await fetch(`${API_URL}/chat/${usuario.username}/${chatTarget}`);
-    const msjs = await res.json();
-    document.getElementById('chat-container').innerHTML = msjs.map(m => `
-        <div class="bg-black/40 p-2 rounded-xl border ${m.emisor === usuario.username ? 'border-indigo-500/30' : 'border-white/5'}">
-            <span class="${m.emisor === usuario.username ? 'text-indigo-400' : 'text-gray-500'} font-black text-[9px] uppercase">${m.emisor}</span>
-            <p class="hud-text-xs text-gray-300">${m.texto}</p>
+    const lista = document.getElementById('lista-pjs-seleccion');
+    document.getElementById('sel-pj-titulo').innerText = "REGALAR A " + userEnMira.nombre;
+    
+    lista.innerHTML = pjs.map(pj => `
+        <div onclick="preConfirmarRegalo('${pj.nombre}')" class="bg-black/40 p-3 rounded-2xl border border-white/5 text-center cursor-pointer hover:border-yellow-500">
+            <img src="${pj.imagen}" class="w-12 h-12 mx-auto mb-1 object-contain">
+            <p class="hud-text-xs font-black uppercase truncate">${pj.nombre}</p>
         </div>
-    `).reverse().join('');
-}
-
-// --- COMBATE ---
-async function ejecutarDuelo(oponenteId) {
-    const res = await fetch(`${API_URL}/duelo`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ retadorId: usuario.id, oponenteId })
-    });
-    const data = await res.json();
-    if(data.error) return notificar(data.error, "error");
+    `).join('');
     
-    notificar(`¡${data.victoria ? 'GANASTE' : 'PERDISTE'}! ${data.detalle}`, data.victoria ? 'info' : 'error');
-    await cargarDatos(); // Refresca balance y stats tras la pelea
+    document.getElementById('modal-seleccion-pj').classList.remove('hidden');
 }
 
-// --- SISTEMA DE NOTIFICACIONES DE SOLICITUDES ---
-async function revisarSolicitudes() {
-    if (!usuario) return;
-    try {
-        const res = await fetch(`${API_URL}/solicitudes/pendientes/${usuario.id}`);
-        const solicitudes = await res.json();
-
-        solicitudes.forEach(sol => {
-            if (!document.getElementById(`sol-${sol._id}`)) {
-                mostrarPopUpSolicitud(sol);
-            }
-        });
-    } catch (e) { console.error("Error al revisar solicitudes", e); }
+function preConfirmarRegalo(nombrePj) {
+    pjParaRegalar = nombrePj;
+    cerrarSeleccionPj();
+    const modal = document.getElementById('modal-confirmar');
+    document.getElementById('conf-texto').innerText = `¿CONFIRMAS REGALAR TU ${nombrePj} A ${userEnMira.nombre}?`;
+    document.getElementById('btn-conf-si').onclick = ejecutarRegaloReal;
+    modal.classList.remove('hidden');
 }
 
-function mostrarPopUpSolicitud(sol) {
-    const box = document.createElement('div');
-    box.id = `sol-${sol._id}`;
-    box.className = "fixed bottom-24 left-4 right-4 bg-indigo-950 border-2 border-indigo-500 p-5 rounded-[2rem] z-[9000] animate-bounce-in shadow-2xl";
-    
-    let icono = sol.tipo === 'duelo' ? 'fa-swords text-red-500' : 'fa-user-plus text-indigo-400';
-    let accionNom = sol.tipo === 'duelo' ? 'te reta a un DUELO' : (sol.tipo === 'trade' ? 'quiere TRADEAR contigo' : 'quiere ser tu amigo');
-
-    box.innerHTML = `
-        <p class="text-white hud-text-xs mb-4 uppercase font-black tracking-tight">
-            <i class="fas ${icono} mr-2"></i><b>${sol.emisorName}</b> ${accionNom}
-        </p>
-        <div class="flex gap-2">
-            <button onclick="aceptarSol('${sol._id}', '${sol.tipo}')" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-black text-[10px] text-white shadow-lg">ACEPTAR</button>
-            <button onclick="rechazarSol('${sol._id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-black text-[10px] text-gray-400">RECHAZAR</button>
-        </div>
-    `;
-    document.body.appendChild(box);
-}
-
-// Ejecutar cada 5 segundos para recibir retos/amistad
-setInterval(revisarSolicitudes, 5000);
-
-// --- GESTIÓN DE INTERACCIONES ---
-async function aceptarSol(solId, tipo) {
-    let ruta = 'aceptar-amistad'; 
-    if(tipo === 'duelo') ruta = 'aceptar-duelo';
-    if(tipo === 'trade') ruta = 'aceptar-trade';
-
-    try {
-        const res = await fetch(`${API_URL}/solicitud/${ruta}/${solId}`, { method: 'POST' });
-        const data = await res.json();
-        
-        document.getElementById(`sol-${solId}`)?.remove();
-        notificar(`¡${tipo.toUpperCase()} ACEPTADO!`);
-        
-        if(tipo === 'duelo') ejecutarDuelo(data.oponenteId);
-        
-        await cargarDatos(); 
-    } catch (e) { notificar("Error al procesar", "error"); }
-}
-
-async function rechazarSol(solId) {
-    document.getElementById(`sol-${solId}`)?.remove();
-}
-
-// --- ACCIONES DE USUARIO (MODAL) ---
-function abrirMenuDuelo() {
-    if(!userEnMira) return;
-    enviarSol('duelo');
-    notificar(`Reto de duelo enviado a ${userEnMira.nombre}`);
-    cerrarAcciones();
-}
-
-function abrirTrade() {
-    if(!userEnMira) return;
-    enviarSol('trade');
-    notificar(`Solicitud de intercambio enviada`);
-    cerrarAcciones();
-}
-
-async function regalarPj() {
-    const nombrePj = prompt("Escribe el nombre del personaje a regalar:");
-    if(!nombrePj || !userEnMira) return;
-
+async function ejecutarRegaloReal() {
     const res = await fetch(`${API_URL}/regalar-personaje`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            emisorId: usuario.id, 
-            receptorId: userEnMira.id, 
-            nombrePj: nombrePj.trim() 
-        })
+        body: JSON.stringify({ emisorId: usuario.id, receptorId: userEnMira.id, nombrePj: pjParaRegalar })
     });
-
     const data = await res.json();
-    if(data.error) return notificar(data.error, "error");
-    
-    notificar(`¡Regalo enviado con éxito!`);
-    cerrarAcciones();
-    await cargarDatos(); 
+    if(data.error) notificar(data.error, "error");
+    else notificar("¡Regalo enviado!");
+    cerrarConfirmacion();
+    cargarDatos();
 }
 
-function setChatTarget(target) {
-    chatTarget = target;
-    document.getElementById('chat-target-label').innerText = target === 'global' ? "Chat Global" : `Chat con ${target}`;
-    switchSocial('chat');
+// --- DUELOS (Suma de Niveles) ---
+function abrirMenuDuelo() {
     cerrarAcciones();
-    cargarChat();
+    seleccionTemporal = []; // Limpiar selección
+    actualizarVistaDuelo();
+    document.getElementById('modal-seleccion-pj').classList.remove('hidden');
+}
+
+async function actualizarVistaDuelo() {
+    const res = await fetch(`${API_URL}/harem/${usuario.id}`);
+    const pjs = await res.json();
+    const lista = document.getElementById('lista-pjs-seleccion');
+    document.getElementById('sel-pj-titulo').innerText = `DUELO (${seleccionTemporal.length}/3)`;
+
+    lista.innerHTML = pjs.map(pj => {
+        const estaSel = seleccionTemporal.includes(pj._id);
+        return `
+            <div onclick="togglePjDuelo('${pj._id}')" class="p-3 rounded-2xl border ${estaSel ? 'border-red-500 bg-red-500/20' : 'border-white/5 bg-black/40'} text-center cursor-pointer">
+                <p class="hud-text-xs font-black uppercase">${pj.nombre}</p>
+                <p class="text-[8px] text-yellow-500">NIVEL ${pj.nivel}</p>
+            </div>
+        `;
+    }).join('');
+
+    const footer = document.getElementById('footer-seleccion');
+    footer.classList.remove('hidden');
+    document.getElementById('btn-confirmar-sel').onclick = () => {
+        if(seleccionTemporal.length === 0) return notificar("Elige al menos 1", "error");
+        enviarSol('duelo');
+        cerrarSeleccionPj();
+    };
+}
+
+function togglePjDuelo(id) {
+    if (seleccionTemporal.includes(id)) {
+        seleccionTemporal = seleccionTemporal.filter(i => i !== id);
+    } else if (seleccionTemporal.length < 3) {
+        seleccionTemporal.push(id);
+    }
+    actualizarVistaDuelo();
+}
+
+function confirmarBorrarAmigo(id, nombre) {
+    cerrarAcciones();
+    const modal = document.getElementById('modal-confirmar');
+    document.getElementById('conf-texto').innerText = `¿ELIMINAR A ${nombre} DE TUS AMIGOS?`;
+    document.getElementById('btn-conf-si').onclick = () => eliminarAmigo(id);
+    modal.classList.remove('hidden');
+}
+
+function confirmarBloqueo(id, nombre) {
+    cerrarAcciones();
+    const modal = document.getElementById('modal-confirmar');
+    document.getElementById('conf-texto').innerText = `¿BLOQUEAR A ${nombre}? NO PODRÁN INTERACTUAR MÁS.`;
+    document.getElementById('btn-conf-si').onclick = () => ejecutarBloqueo(id, 'bloquear');
+    modal.classList.remove('hidden');
+}
+
+async function ejecutarBloqueo(targetId, tipo) {
+    await fetch(`${API_URL}/usuarios/bloqueo`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ miId: usuario.id, targetId, accion: tipo })
+    });
+    notificar(tipo === 'bloquear' ? "Usuario bloqueado" : "Usuario desbloqueado");
+    cerrarConfirmacion();
+    cargarDatos();
+}
+
+async function cargarChat() {
+    if(!chatTarget) return; // Si no hay nadie seleccionado, no cargamos nada
+
+    const res = await fetch(`${API_URL}/chat/${usuario.username}/${chatTarget}`);
+    const msjs = await res.json();
+    
+    const container = document.getElementById('chat-container');
+    if(msjs.length === 0) {
+        container.innerHTML = `<div class="opacity-20 text-center py-10 hud-text-xs font-black uppercase">Sin mensajes con ${chatTarget}</div>`;
+        return;
+    }
+
+    container.innerHTML = msjs.map(m => `
+        <div class="flex flex-col ${m.emisor === usuario.username ? 'items-end' : 'items-start'} mb-2">
+            <div class="p-3 rounded-2xl hud-text-xs ${m.emisor === usuario.username ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-300 rounded-tl-none border border-white/5'}">
+                ${m.texto}
+            </div>
+        </div>
+    `).reverse().join('');
 }
